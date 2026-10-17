@@ -1,0 +1,272 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. BKMENU.
+
+      *>---------------------------------------------------------------
+      *>
+      *>      --------------------------------------------------
+      *>           PROGRAMA RESPONSABLE DEL MENU PRINCIPAL
+      *>                  DE LA APLICACION BANCARIA
+      *>      --------------------------------------------------
+      *>
+      *>---------------------------------------------------------------
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+       COPY BKMMEN.
+       COPY DFHBMSCA.
+       COPY DFHAID.
+
+      *>   ESTRUCTURA PARA CENTRALIZAR LOS MENSAJES DEL SISTEMA
+       77  MSJ-INGRESAR-OPC            PIC X(24)
+           VALUE 'DEBE INFORMAR UNA OPCION'.
+       77  MSJ-OPC-NO-VALIDA           PIC X(49)
+           VALUE 'OPCION NO VALIDA. REVISE LAS OPCIONES DISPONIBLES'.
+       77  MSJ-ERROR-CALL-PROG         PIC X(29)
+           VALUE 'ERROR AL INVOCAR EL PROGRAMA '.
+
+       01  WS-CAMPOS-TRABAJO.
+           03 WS-COMMAREA.
+              05 WS-COM-OPCION         PIC 9(01).
+           03 WS-FECHA-HORA            PIC S9(15) COMP-3.
+           03 WS-FECHA                 PIC X(10).
+           03 WS-HORA                  PIC X(08).
+           03 WS-OPCION                PIC X(01).
+              88 WS-CLIENTES               VALUE '1'.
+              88 WS-CUENTAS                VALUE '2'.
+              88 WS-CAJA                   VALUE '3'.
+              88 WS-CONSULTAS              VALUE '4'.
+              88 WS-SALIR                  VALUE '9'.
+           03 WS-EIBAID                PIC X(01).
+              88 WS-ENTER                  VALUE X'7D'.
+              88 WS-PF3                    VALUE X'F3'.
+              88 WS-PF12                   VALUE X'7C'.
+           03 WS-PROGRAMA              PIC X(08).
+           03 WS-ERROR.
+              05 WS-RESP               PIC S9(08) COMP.
+              05 WS-RESP2              PIC S9(08) COMP.
+              05 WS-RESP-LIMPIO        PIC X(20).
+              05 WS-RESP2-LIMPIO       PIC X(20).
+              05 WS-MENSAJE            PIC X(78).
+           03 WS-FORMATEAR.
+              05 WS-CAMPO-ENTRADA      PIC X(20).
+              05 WS-CAMPO-SALIDA       PIC X(20).
+              05 WS-ENCONTRADO         PIC X(01).
+              05 WS-I                  PIC 9(02).
+              05 WS-J                  PIC 9(02).
+
+       LINKAGE SECTION.
+       01  DFHCOMMAREA.
+           05 LK-OPCION                PIC 9(01).
+
+      *>---------------------------------------------------------------
+       PROCEDURE DIVISION.
+       0000-PRINCIPAL.
+           PERFORM 1000-INICIALIZAR-PROGRAMA
+
+           IF  EIBCALEN = ZEROS
+               PERFORM 9000-MOSTRAR-MENU
+           ELSE
+               PERFORM 2000-PROCESAR-ENTRADA
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       1000-INICIALIZAR-PROGRAMA.
+           INITIALIZE                  WS-CAMPOS-TRABAJO
+           MOVE LOW-VALUES             TO BKMEN00I
+           .
+
+      *>---------------------------------------------------------------
+       2000-PROCESAR-ENTRADA.
+           EXEC CICS
+                RECEIVE
+                MAP('BKMEN00')
+                MAPSET('BKMMEN')
+                RESP(WS-RESP)
+                RESP2(WS-RESP2)
+           END-EXEC
+
+           PERFORM 3000-EVALUAR-TECLA
+           .
+
+      *>---------------------------------------------------------------
+       3000-EVALUAR-TECLA.
+           MOVE EIBAID                 TO WS-EIBAID
+           MOVE OPCIONI                TO WS-OPCION
+
+           EVALUATE TRUE
+               WHEN WS-PF3
+               OR   WS-SALIR
+                    PERFORM 9999-SALIR
+               WHEN WS-PF12
+                    PERFORM 9000-MOSTRAR-MENU
+               WHEN WS-ENTER
+                    PERFORM 4000-PROCESAR-OPCION
+               WHEN OTHER
+                    PERFORM 9000-MOSTRAR-MENU
+           END-EVALUATE
+           .
+
+      *>---------------------------------------------------------------
+       4000-PROCESAR-OPCION.
+           IF  OPCIONL = ZEROS
+           OR  OPCIONI = SPACE
+               MOVE MSJ-INGRESAR-OPC   TO MENSAJEO
+               MOVE DFHRED             TO OPCIONC
+               MOVE DFHRED             TO MENSAJEC
+               PERFORM 9000-MOSTRAR-MENU
+           END-IF
+
+           EVALUATE TRUE
+               WHEN WS-CLIENTES
+                    MOVE 'BKGECLI'     TO WS-PROGRAMA
+                    MOVE 1             TO WS-COM-OPCION
+                    PERFORM 5000-INVOCAR-PROGRAMA
+               WHEN WS-CUENTAS
+                    MOVE 'BKGECUE'     TO WS-PROGRAMA
+                    MOVE 1             TO WS-COM-OPCION
+                    PERFORM 5000-INVOCAR-PROGRAMA
+               WHEN WS-CAJA
+                    MOVE 'BKOPCAJ'     TO WS-PROGRAMA
+                    MOVE 1             TO WS-COM-OPCION
+                    PERFORM 5000-INVOCAR-PROGRAMA
+               WHEN WS-CONSULTAS
+                    MOVE 'BKCONMV'     TO WS-PROGRAMA
+                    MOVE 1             TO WS-COM-OPCION
+                    PERFORM 5000-INVOCAR-PROGRAMA
+               WHEN OTHER
+                    MOVE MSJ-OPC-NO-VALIDA TO MENSAJEO
+                    MOVE DFHRED        TO OPCIONC
+                    MOVE DFHRED        TO MENSAJEC
+                    PERFORM 9000-MOSTRAR-MENU
+           END-EVALUATE
+           .
+
+      *>---------------------------------------------------------------
+       5000-INVOCAR-PROGRAMA.
+           EXEC CICS
+                XCTL
+                PROGRAM(WS-PROGRAMA)
+                COMMAREA(WS-COMMAREA)
+                LENGTH(LENGTH OF WS-COMMAREA)
+                RESP(WS-RESP)
+                RESP2(WS-RESP2)
+           END-EXEC
+
+           STRING MSJ-ERROR-CALL-PROG DELIMITED BY SIZE
+                  WS-PROGRAMA         DELIMITED BY SPACE
+                                       INTO WS-MENSAJE
+           PERFORM 5100-VALIDAR-RESPUESTA
+           .
+
+      *>---------------------------------------------------------------
+       5100-VALIDAR-RESPUESTA.
+           IF  WS-RESP NOT = DFHRESP(NORMAL)
+               MOVE DFHRED             TO OPCIONC
+               MOVE DFHRED             TO MENSAJEC
+
+               MOVE SPACES             TO WS-CAMPO-ENTRADA
+               MOVE WS-RESP            TO WS-CAMPO-ENTRADA
+               PERFORM 9000-FORMATEAR-CAMPO-NUMERICO
+               MOVE WS-CAMPO-SALIDA    TO WS-RESP-LIMPIO
+
+               MOVE SPACES             TO WS-CAMPO-ENTRADA
+               MOVE WS-RESP2           TO WS-CAMPO-ENTRADA
+               PERFORM 9000-FORMATEAR-CAMPO-NUMERICO
+               MOVE WS-CAMPO-SALIDA    TO WS-RESP2-LIMPIO
+
+               STRING WS-MENSAJE      DELIMITED BY '  '
+                      ' ('            DELIMITED BY SIZE
+                      WS-RESP-LIMPIO  DELIMITED BY SPACE
+                      '/'             DELIMITED BY SIZE
+                      WS-RESP2-LIMPIO DELIMITED BY SPACE
+                      ')'             DELIMITED BY SIZE
+                                       INTO MENSAJEO
+
+               PERFORM 9000-MOSTRAR-MENU
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       9000-MOSTRAR-MENU.
+           PERFORM 9000-OBTENER-FECHA-HORA
+
+           MOVE WS-FECHA               TO FECHAO
+           MOVE WS-HORA                TO HORAO
+
+           EXEC CICS
+                SEND
+                MAP('BKMEN00')
+                MAPSET('BKMMEN')
+                ERASE
+                FREEKB
+           END-EXEC
+
+           EXEC CICS
+                RETURN
+                TRANSID('BANK')
+                COMMAREA(WS-COMMAREA)
+                LENGTH(LENGTH OF WS-COMMAREA)
+           END-EXEC
+           .
+
+      *>---------------------------------------------------------------
+       9000-OBTENER-FECHA-HORA.
+           MOVE ZEROS                  TO WS-FECHA-HORA
+           MOVE SPACES                 TO WS-FECHA
+           MOVE SPACES                 TO WS-HORA
+
+           EXEC CICS
+                ASKTIME
+                ABSTIME(WS-FECHA-HORA)
+           END-EXEC
+
+           EXEC CICS
+                FORMATTIME
+                ABSTIME(WS-FECHA-HORA)
+                DATESEP('-')
+                TIMESEP(':')
+                YYYYMMDD(WS-FECHA)
+                TIME(WS-HORA)
+           END-EXEC
+           .
+
+      *>---------------------------------------------------------------
+       9000-FORMATEAR-CAMPO-NUMERICO.
+           MOVE SPACES                 TO WS-CAMPO-SALIDA
+           MOVE 'N'                    TO WS-ENCONTRADO
+           MOVE 1                      TO WS-J
+
+           PERFORM VARYING WS-I FROM 1 BY 1 UNTIL WS-I > 20
+               IF  WS-ENCONTRADO = 'N'
+                   IF  WS-CAMPO-ENTRADA(WS-I:1) NOT = '0'
+                   AND WS-CAMPO-ENTRADA(WS-I:1) NOT = SPACE
+                       MOVE 'S'        TO WS-ENCONTRADO
+                   END-IF
+               END-IF
+               IF  WS-ENCONTRADO = 'S'
+               AND WS-CAMPO-ENTRADA(WS-I:1) NOT = SPACE
+                   MOVE WS-CAMPO-ENTRADA(WS-I:1)
+                                       TO WS-CAMPO-SALIDA(WS-J:1)
+                   ADD 1               TO WS-J
+               END-IF
+           END-PERFORM
+
+           IF  WS-ENCONTRADO = 'N'
+               MOVE '0'                TO WS-CAMPO-SALIDA
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       9999-SALIR.
+           EXEC CICS
+                SEND CONTROL
+                ERASE
+                FREEKB
+                ALARM
+           END-EXEC
+
+           EXEC CICS
+                RETURN
+           END-EXEC
+           .
