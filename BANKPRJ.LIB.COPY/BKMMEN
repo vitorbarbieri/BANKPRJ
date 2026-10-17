@@ -1,0 +1,44 @@
+       01  BKMEN00I.
+           02  FILLER PIC X(12).
+           02  FECHAL    COMP  PIC  S9(4).
+           02  FECHAF    PICTURE X.
+           02  FILLER REDEFINES FECHAF.
+             03 FECHAA    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  FECHAI  PIC X(10).
+           02  HORAL    COMP  PIC  S9(4).
+           02  HORAF    PICTURE X.
+           02  FILLER REDEFINES HORAF.
+             03 HORAA    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  HORAI  PIC X(8).
+           02  OPCIONL    COMP  PIC  S9(4).
+           02  OPCIONF    PICTURE X.
+           02  FILLER REDEFINES OPCIONF.
+             03 OPCIONA    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  OPCIONI  PIC X(1).
+           02  MENSAJEL    COMP  PIC  S9(4).
+           02  MENSAJEF    PICTURE X.
+           02  FILLER REDEFINES MENSAJEF.
+             03 MENSAJEA    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  MENSAJEI  PIC X(69).
+       01  BKMEN00O REDEFINES BKMEN00I.
+           02  FILLER PIC X(12).
+           02  FILLER PICTURE X(3).
+           02  FECHAC    PICTURE X.
+           02  FECHAH    PICTURE X.
+           02  FECHAO  PIC X(10).
+           02  FILLER PICTURE X(3).
+           02  HORAC    PICTURE X.
+           02  HORAH    PICTURE X.
+           02  HORAO  PIC X(8).
+           02  FILLER PICTURE X(3).
+           02  OPCIONC    PICTURE X.
+           02  OPCIONH    PICTURE X.
+           02  OPCIONO  PIC X(1).
+           02  FILLER PICTURE X(3).
+           02  MENSAJEC    PICTURE X.
+           02  MENSAJEH    PICTURE X.
+           02  MENSAJEO  PIC X(69).

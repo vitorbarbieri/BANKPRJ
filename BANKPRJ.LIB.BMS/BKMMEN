@@ -1,0 +1,127 @@
+BKMMEN   DFHMSD TYPE=MAP,                                              X
+               MODE=INOUT,                                             X
+               TERM=ALL,                                               X
+               LANG=COBOL,                                             X
+               STORAGE=AUTO
+BKMEN00  DFHMDI SIZE=(24,80),                                          X
+               LINE=1,                                                 X
+               COLUMN=1,                                               X
+               COLOR=GREEN,                                            X
+               MAPATTS=(COLOR,HILIGHT),                                X
+               DSATTS=(COLOR,HILIGHT)
+*-----------------------------------------------------------*
+* CABECERA
+*-----------------------------------------------------------*
+         DFHMDF POS=(01,01),                                           X
+               LENGTH=4,                                               X
+               ATTRB=(PROT,BRT),                                       X
+               COLOR=BLUE,                                             X
+               INITIAL='BANK'
+         DFHMDF POS=(01,25),                                           X
+               LENGTH=30,                                              X
+               ATTRB=(PROT,BRT),                                       X
+               COLOR=BLUE,                                             X
+               INITIAL='BANCO BANKPRJ - MENU PRINCIPAL'
+FECHA    DFHMDF POS=(01,69),                                           X
+               LENGTH=10,                                              X
+               ATTRB=(PROT,BRT),                                       X
+               COLOR=BLUE
+         DFHMDF POS=(02,01),                                           X
+               LENGTH=7,                                               X
+               ATTRB=(PROT,BRT),                                       X
+               COLOR=BLUE,                                             X
+               INITIAL='BANKPRJ'
+HORA     DFHMDF POS=(02,71),                                           X
+               LENGTH=8,                                               X
+               ATTRB=(PROT,BRT),                                       X
+               COLOR=BLUE
+*-----------------------------------------------------------*
+* SEPARADOR
+*-----------------------------------------------------------*
+         DFHMDF POS=(03,01),                                           X
+               LENGTH=78,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='-----------------------------------------------X
+               -------------------------------'
+*-----------------------------------------------------------*
+* CUERPO
+*-----------------------------------------------------------*
+         DFHMDF POS=(05,12),                                           X
+               LENGTH=35,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='SELECCIONE UNA OPCION Y PULSE ENTER'
+         DFHMDF POS=(07,16),                                           X
+               LENGTH=23,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='1 - GESTION DE CLIENTES'
+         DFHMDF POS=(08,16),                                           X
+               LENGTH=22,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='2 - APERTURA DE CUENTA'
+         DFHMDF POS=(09,16),                                           X
+               LENGTH=47,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='3 - OPERACIONES DE CAJA (DEPOSITO / EXTRACCION)X
+               '
+         DFHMDF POS=(10,16),                                           X
+               LENGTH=35,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='4 - CONSULTAS (SALDO Y MOVIMIENTOS)'
+         DFHMDF POS=(12,16),                                           X
+               LENGTH=21,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='9 - SALIR DEL SISTEMA'
+         DFHMDF POS=(15,12),                                           X
+               LENGTH=7,                                               X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='OPCION:'
+OPCION   DFHMDF POS=(15,20),                                           X
+               LENGTH=1,                                               X
+               ATTRB=(UNPROT,NORM,FSET,IC),                            X
+               HILIGHT=UNDERLINE,                                      X
+               COLOR=GREEN
+         DFHMDF POS=(15,22),                                           X
+               LENGTH=1,                                               X
+               ATTRB=PROT
+*-----------------------------------------------------------*
+* SEPARADOR
+*-----------------------------------------------------------*
+         DFHMDF POS=(21,01),                                           X
+               LENGTH=78,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='-----------------------------------------------X
+               -------------------------------'
+*-----------------------------------------------------------*
+* MENSAJES
+*-----------------------------------------------------------*
+         DFHMDF POS=(22,01),                                           X
+               LENGTH=8,                                               X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='MENSAJE:'
+MENSAJE  DFHMDF POS=(22,10),                                           X
+               LENGTH=69,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=GREEN
+*-----------------------------------------------------------*
+* TECLAS
+*-----------------------------------------------------------*
+         DFHMDF POS=(23,01),                                           X
+               LENGTH=33,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='PF3=SALIR   PF12=LIMPIAR PANTALLA'
+*-----------------------------------------------------------*
+* FINAL
+*-----------------------------------------------------------*
+         DFHMSD TYPE=FINAL
+         END
