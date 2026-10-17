@@ -99,6 +99,7 @@
                OR   WS-SALIR
                     PERFORM 9999-SALIR
                WHEN WS-PF12
+                    PERFORM 1000-INICIALIZAR-PROGRAMA
                     PERFORM 9000-MOSTRAR-MENU
                WHEN WS-ENTER
                     PERFORM 4000-PROCESAR-OPCION

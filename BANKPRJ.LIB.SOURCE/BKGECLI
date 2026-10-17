@@ -107,6 +107,7 @@
                OR   WS-SALIR
                     PERFORM 9999-VOLVER-MENU-PRINCIPAL
                WHEN WS-PF12
+                    PERFORM 1900-INICIALIZAR-MENU
                     PERFORM 1900-MOSTRAR-PANTALLA-MENU
                WHEN WS-ENTER
                     PERFORM 1200-PROCESAR-OPCION
