@@ -1,0 +1,604 @@
+       01  BKCLI00I.
+           02  FILLER PIC X(12).
+           02  FCH0L    COMP  PIC  S9(4).
+           02  FCH0F    PICTURE X.
+           02  FILLER REDEFINES FCH0F.
+             03 FCH0A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  FCH0I  PIC X(10).
+           02  HRA0L    COMP  PIC  S9(4).
+           02  HRA0F    PICTURE X.
+           02  FILLER REDEFINES HRA0F.
+             03 HRA0A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  HRA0I  PIC X(8).
+           02  OPC0L    COMP  PIC  S9(4).
+           02  OPC0F    PICTURE X.
+           02  FILLER REDEFINES OPC0F.
+             03 OPC0A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  OPC0I  PIC X(1).
+           02  MSJ0L    COMP  PIC  S9(4).
+           02  MSJ0F    PICTURE X.
+           02  FILLER REDEFINES MSJ0F.
+             03 MSJ0A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  MSJ0I  PIC X(69).
+       01  BKCLI00O REDEFINES BKCLI00I.
+           02  FILLER PIC X(12).
+           02  FILLER PICTURE X(3).
+           02  FCH0C    PICTURE X.
+           02  FCH0H    PICTURE X.
+           02  FCH0O  PIC X(10).
+           02  FILLER PICTURE X(3).
+           02  HRA0C    PICTURE X.
+           02  HRA0H    PICTURE X.
+           02  HRA0O  PIC X(8).
+           02  FILLER PICTURE X(3).
+           02  OPC0C    PICTURE X.
+           02  OPC0H    PICTURE X.
+           02  OPC0O  PIC X(1).
+           02  FILLER PICTURE X(3).
+           02  MSJ0C    PICTURE X.
+           02  MSJ0H    PICTURE X.
+           02  MSJ0O  PIC X(69).
+       01  BKCLI01I.
+           02  FILLER PIC X(12).
+           02  FCH1L    COMP  PIC  S9(4).
+           02  FCH1F    PICTURE X.
+           02  FILLER REDEFINES FCH1F.
+             03 FCH1A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  FCH1I  PIC X(10).
+           02  HRA1L    COMP  PIC  S9(4).
+           02  HRA1F    PICTURE X.
+           02  FILLER REDEFINES HRA1F.
+             03 HRA1A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  HRA1I  PIC X(8).
+           02  DOC1L    COMP  PIC  S9(4).
+           02  DOC1F    PICTURE X.
+           02  FILLER REDEFINES DOC1F.
+             03 DOC1A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  DOC1I  PIC X(9).
+           02  NMB1L    COMP  PIC  S9(4).
+           02  NMB1F    PICTURE X.
+           02  FILLER REDEFINES NMB1F.
+             03 NMB1A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  NMB1I  PIC X(30).
+           02  MAIL1L    COMP  PIC  S9(4).
+           02  MAIL1F    PICTURE X.
+           02  FILLER REDEFINES MAIL1F.
+             03 MAIL1A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  MAIL1I  PIC X(38).
+           02  TEL1L    COMP  PIC  S9(4).
+           02  TEL1F    PICTURE X.
+           02  FILLER REDEFINES TEL1F.
+             03 TEL1A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  TEL1I  PIC X(9).
+           02  MSJ1L    COMP  PIC  S9(4).
+           02  MSJ1F    PICTURE X.
+           02  FILLER REDEFINES MSJ1F.
+             03 MSJ1A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  MSJ1I  PIC X(69).
+       01  BKCLI01O REDEFINES BKCLI01I.
+           02  FILLER PIC X(12).
+           02  FILLER PICTURE X(3).
+           02  FCH1C    PICTURE X.
+           02  FCH1H    PICTURE X.
+           02  FCH1O  PIC X(10).
+           02  FILLER PICTURE X(3).
+           02  HRA1C    PICTURE X.
+           02  HRA1H    PICTURE X.
+           02  HRA1O  PIC X(8).
+           02  FILLER PICTURE X(3).
+           02  DOC1C    PICTURE X.
+           02  DOC1H    PICTURE X.
+           02  DOC1O  PIC X(9).
+           02  FILLER PICTURE X(3).
+           02  NMB1C    PICTURE X.
+           02  NMB1H    PICTURE X.
+           02  NMB1O  PIC X(30).
+           02  FILLER PICTURE X(3).
+           02  MAIL1C    PICTURE X.
+           02  MAIL1H    PICTURE X.
+           02  MAIL1O  PIC X(38).
+           02  FILLER PICTURE X(3).
+           02  TEL1C    PICTURE X.
+           02  TEL1H    PICTURE X.
+           02  TEL1O  PIC X(9).
+           02  FILLER PICTURE X(3).
+           02  MSJ1C    PICTURE X.
+           02  MSJ1H    PICTURE X.
+           02  MSJ1O  PIC X(69).
+       01  BKCLI02I.
+           02  FILLER PIC X(12).
+           02  FCH2L    COMP  PIC  S9(4).
+           02  FCH2F    PICTURE X.
+           02  FILLER REDEFINES FCH2F.
+             03 FCH2A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  FCH2I  PIC X(10).
+           02  HRA2L    COMP  PIC  S9(4).
+           02  HRA2F    PICTURE X.
+           02  FILLER REDEFINES HRA2F.
+             03 HRA2A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  HRA2I  PIC X(8).
+           02  DOCBUS2L    COMP  PIC  S9(4).
+           02  DOCBUS2F    PICTURE X.
+           02  FILLER REDEFINES DOCBUS2F.
+             03 DOCBUS2A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  DOCBUS2I  PIC X(9).
+           02  IDBUS2L    COMP  PIC  S9(4).
+           02  IDBUS2F    PICTURE X.
+           02  FILLER REDEFINES IDBUS2F.
+             03 IDBUS2A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  IDBUS2I  PIC X(10).
+           02  ID2L    COMP  PIC  S9(4).
+           02  ID2F    PICTURE X.
+           02  FILLER REDEFINES ID2F.
+             03 ID2A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  ID2I  PIC X(10).
+           02  DOC2L    COMP  PIC  S9(4).
+           02  DOC2F    PICTURE X.
+           02  FILLER REDEFINES DOC2F.
+             03 DOC2A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  DOC2I  PIC X(9).
+           02  NMB2L    COMP  PIC  S9(4).
+           02  NMB2F    PICTURE X.
+           02  FILLER REDEFINES NMB2F.
+             03 NMB2A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  NMB2I  PIC X(30).
+           02  MAIL2L    COMP  PIC  S9(4).
+           02  MAIL2F    PICTURE X.
+           02  FILLER REDEFINES MAIL2F.
+             03 MAIL2A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  MAIL2I  PIC X(38).
+           02  TEL2L    COMP  PIC  S9(4).
+           02  TEL2F    PICTURE X.
+           02  FILLER REDEFINES TEL2F.
+             03 TEL2A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  TEL2I  PIC X(9).
+           02  FALTA2L    COMP  PIC  S9(4).
+           02  FALTA2F    PICTURE X.
+           02  FILLER REDEFINES FALTA2F.
+             03 FALTA2A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  FALTA2I  PIC X(10).
+           02  EST2L    COMP  PIC  S9(4).
+           02  EST2F    PICTURE X.
+           02  FILLER REDEFINES EST2F.
+             03 EST2A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  EST2I  PIC X(1).
+           02  CTAS2L    COMP  PIC  S9(4).
+           02  CTAS2F    PICTURE X.
+           02  FILLER REDEFINES CTAS2F.
+             03 CTAS2A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  CTAS2I  PIC X(3).
+           02  MSJ2L    COMP  PIC  S9(4).
+           02  MSJ2F    PICTURE X.
+           02  FILLER REDEFINES MSJ2F.
+             03 MSJ2A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  MSJ2I  PIC X(69).
+       01  BKCLI02O REDEFINES BKCLI02I.
+           02  FILLER PIC X(12).
+           02  FILLER PICTURE X(3).
+           02  FCH2C    PICTURE X.
+           02  FCH2H    PICTURE X.
+           02  FCH2O  PIC X(10).
+           02  FILLER PICTURE X(3).
+           02  HRA2C    PICTURE X.
+           02  HRA2H    PICTURE X.
+           02  HRA2O  PIC X(8).
+           02  FILLER PICTURE X(3).
+           02  DOCBUS2C    PICTURE X.
+           02  DOCBUS2H    PICTURE X.
+           02  DOCBUS2O  PIC X(9).
+           02  FILLER PICTURE X(3).
+           02  IDBUS2C    PICTURE X.
+           02  IDBUS2H    PICTURE X.
+           02  IDBUS2O  PIC X(10).
+           02  FILLER PICTURE X(3).
+           02  ID2C    PICTURE X.
+           02  ID2H    PICTURE X.
+           02  ID2O  PIC X(10).
+           02  FILLER PICTURE X(3).
+           02  DOC2C    PICTURE X.
+           02  DOC2H    PICTURE X.
+           02  DOC2O  PIC X(9).
+           02  FILLER PICTURE X(3).
+           02  NMB2C    PICTURE X.
+           02  NMB2H    PICTURE X.
+           02  NMB2O  PIC X(30).
+           02  FILLER PICTURE X(3).
+           02  MAIL2C    PICTURE X.
+           02  MAIL2H    PICTURE X.
+           02  MAIL2O  PIC X(38).
+           02  FILLER PICTURE X(3).
+           02  TEL2C    PICTURE X.
+           02  TEL2H    PICTURE X.
+           02  TEL2O  PIC X(9).
+           02  FILLER PICTURE X(3).
+           02  FALTA2C    PICTURE X.
+           02  FALTA2H    PICTURE X.
+           02  FALTA2O  PIC X(10).
+           02  FILLER PICTURE X(3).
+           02  EST2C    PICTURE X.
+           02  EST2H    PICTURE X.
+           02  EST2O  PIC X(1).
+           02  FILLER PICTURE X(3).
+           02  CTAS2C    PICTURE X.
+           02  CTAS2H    PICTURE X.
+           02  CTAS2O  PIC X(3).
+           02  FILLER PICTURE X(3).
+           02  MSJ2C    PICTURE X.
+           02  MSJ2H    PICTURE X.
+           02  MSJ2O  PIC X(69).
+       01  BKCLI03I.
+           02  FILLER PIC X(12).
+           02  FCH3L    COMP  PIC  S9(4).
+           02  FCH3F    PICTURE X.
+           02  FILLER REDEFINES FCH3F.
+             03 FCH3A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  FCH3I  PIC X(10).
+           02  HRA3L    COMP  PIC  S9(4).
+           02  HRA3F    PICTURE X.
+           02  FILLER REDEFINES HRA3F.
+             03 HRA3A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  HRA3I  PIC X(8).
+           02  DOCBUS3L    COMP  PIC  S9(4).
+           02  DOCBUS3F    PICTURE X.
+           02  FILLER REDEFINES DOCBUS3F.
+             03 DOCBUS3A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  DOCBUS3I  PIC X(9).
+           02  ID3L    COMP  PIC  S9(4).
+           02  ID3F    PICTURE X.
+           02  FILLER REDEFINES ID3F.
+             03 ID3A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  ID3I  PIC X(10).
+           02  DOC3L    COMP  PIC  S9(4).
+           02  DOC3F    PICTURE X.
+           02  FILLER REDEFINES DOC3F.
+             03 DOC3A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  DOC3I  PIC X(9).
+           02  FALTA3L    COMP  PIC  S9(4).
+           02  FALTA3F    PICTURE X.
+           02  FILLER REDEFINES FALTA3F.
+             03 FALTA3A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  FALTA3I  PIC X(10).
+           02  EST3L    COMP  PIC  S9(4).
+           02  EST3F    PICTURE X.
+           02  FILLER REDEFINES EST3F.
+             03 EST3A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  EST3I  PIC X(1).
+           02  NMB3L    COMP  PIC  S9(4).
+           02  NMB3F    PICTURE X.
+           02  FILLER REDEFINES NMB3F.
+             03 NMB3A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  NMB3I  PIC X(30).
+           02  MAIL3L    COMP  PIC  S9(4).
+           02  MAIL3F    PICTURE X.
+           02  FILLER REDEFINES MAIL3F.
+             03 MAIL3A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  MAIL3I  PIC X(38).
+           02  TEL3L    COMP  PIC  S9(4).
+           02  TEL3F    PICTURE X.
+           02  FILLER REDEFINES TEL3F.
+             03 TEL3A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  TEL3I  PIC X(9).
+           02  MSJ3L    COMP  PIC  S9(4).
+           02  MSJ3F    PICTURE X.
+           02  FILLER REDEFINES MSJ3F.
+             03 MSJ3A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  MSJ3I  PIC X(69).
+       01  BKCLI03O REDEFINES BKCLI03I.
+           02  FILLER PIC X(12).
+           02  FILLER PICTURE X(3).
+           02  FCH3C    PICTURE X.
+           02  FCH3H    PICTURE X.
+           02  FCH3O  PIC X(10).
+           02  FILLER PICTURE X(3).
+           02  HRA3C    PICTURE X.
+           02  HRA3H    PICTURE X.
+           02  HRA3O  PIC X(8).
+           02  FILLER PICTURE X(3).
+           02  DOCBUS3C    PICTURE X.
+           02  DOCBUS3H    PICTURE X.
+           02  DOCBUS3O  PIC X(9).
+           02  FILLER PICTURE X(3).
+           02  ID3C    PICTURE X.
+           02  ID3H    PICTURE X.
+           02  ID3O  PIC X(10).
+           02  FILLER PICTURE X(3).
+           02  DOC3C    PICTURE X.
+           02  DOC3H    PICTURE X.
+           02  DOC3O  PIC X(9).
+           02  FILLER PICTURE X(3).
+           02  FALTA3C    PICTURE X.
+           02  FALTA3H    PICTURE X.
+           02  FALTA3O  PIC X(10).
+           02  FILLER PICTURE X(3).
+           02  EST3C    PICTURE X.
+           02  EST3H    PICTURE X.
+           02  EST3O  PIC X(1).
+           02  FILLER PICTURE X(3).
+           02  NMB3C    PICTURE X.
+           02  NMB3H    PICTURE X.
+           02  NMB3O  PIC X(30).
+           02  FILLER PICTURE X(3).
+           02  MAIL3C    PICTURE X.
+           02  MAIL3H    PICTURE X.
+           02  MAIL3O  PIC X(38).
+           02  FILLER PICTURE X(3).
+           02  TEL3C    PICTURE X.
+           02  TEL3H    PICTURE X.
+           02  TEL3O  PIC X(9).
+           02  FILLER PICTURE X(3).
+           02  MSJ3C    PICTURE X.
+           02  MSJ3H    PICTURE X.
+           02  MSJ3O  PIC X(69).
+       01  BKCLI04I.
+           02  FILLER PIC X(12).
+           02  FCH4L    COMP  PIC  S9(4).
+           02  FCH4F    PICTURE X.
+           02  FILLER REDEFINES FCH4F.
+             03 FCH4A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  FCH4I  PIC X(10).
+           02  HRA4L    COMP  PIC  S9(4).
+           02  HRA4F    PICTURE X.
+           02  FILLER REDEFINES HRA4F.
+             03 HRA4A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  HRA4I  PIC X(8).
+           02  DOCBUS4L    COMP  PIC  S9(4).
+           02  DOCBUS4F    PICTURE X.
+           02  FILLER REDEFINES DOCBUS4F.
+             03 DOCBUS4A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  DOCBUS4I  PIC X(9).
+           02  ID4L    COMP  PIC  S9(4).
+           02  ID4F    PICTURE X.
+           02  FILLER REDEFINES ID4F.
+             03 ID4A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  ID4I  PIC X(10).
+           02  DOC4L    COMP  PIC  S9(4).
+           02  DOC4F    PICTURE X.
+           02  FILLER REDEFINES DOC4F.
+             03 DOC4A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  DOC4I  PIC X(9).
+           02  NMB4L    COMP  PIC  S9(4).
+           02  NMB4F    PICTURE X.
+           02  FILLER REDEFINES NMB4F.
+             03 NMB4A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  NMB4I  PIC X(30).
+           02  TEL4L    COMP  PIC  S9(4).
+           02  TEL4F    PICTURE X.
+           02  FILLER REDEFINES TEL4F.
+             03 TEL4A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  TEL4I  PIC X(9).
+           02  EST4L    COMP  PIC  S9(4).
+           02  EST4F    PICTURE X.
+           02  FILLER REDEFINES EST4F.
+             03 EST4A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  EST4I  PIC X(1).
+           02  CTAS4L    COMP  PIC  S9(4).
+           02  CTAS4F    PICTURE X.
+           02  FILLER REDEFINES CTAS4F.
+             03 CTAS4A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  CTAS4I  PIC X(3).
+           02  SLD4L    COMP  PIC  S9(4).
+           02  SLD4F    PICTURE X.
+           02  FILLER REDEFINES SLD4F.
+             03 SLD4A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  SLD4I  PIC X(18).
+           02  RESP4L    COMP  PIC  S9(4).
+           02  RESP4F    PICTURE X.
+           02  FILLER REDEFINES RESP4F.
+             03 RESP4A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  RESP4I  PIC X(1).
+           02  MSJ4L    COMP  PIC  S9(4).
+           02  MSJ4F    PICTURE X.
+           02  FILLER REDEFINES MSJ4F.
+             03 MSJ4A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  MSJ4I  PIC X(69).
+       01  BKCLI04O REDEFINES BKCLI04I.
+           02  FILLER PIC X(12).
+           02  FILLER PICTURE X(3).
+           02  FCH4C    PICTURE X.
+           02  FCH4H    PICTURE X.
+           02  FCH4O  PIC X(10).
+           02  FILLER PICTURE X(3).
+           02  HRA4C    PICTURE X.
+           02  HRA4H    PICTURE X.
+           02  HRA4O  PIC X(8).
+           02  FILLER PICTURE X(3).
+           02  DOCBUS4C    PICTURE X.
+           02  DOCBUS4H    PICTURE X.
+           02  DOCBUS4O  PIC X(9).
+           02  FILLER PICTURE X(3).
+           02  ID4C    PICTURE X.
+           02  ID4H    PICTURE X.
+           02  ID4O  PIC X(10).
+           02  FILLER PICTURE X(3).
+           02  DOC4C    PICTURE X.
+           02  DOC4H    PICTURE X.
+           02  DOC4O  PIC X(9).
+           02  FILLER PICTURE X(3).
+           02  NMB4C    PICTURE X.
+           02  NMB4H    PICTURE X.
+           02  NMB4O  PIC X(30).
+           02  FILLER PICTURE X(3).
+           02  TEL4C    PICTURE X.
+           02  TEL4H    PICTURE X.
+           02  TEL4O  PIC X(9).
+           02  FILLER PICTURE X(3).
+           02  EST4C    PICTURE X.
+           02  EST4H    PICTURE X.
+           02  EST4O  PIC X(1).
+           02  FILLER PICTURE X(3).
+           02  CTAS4C    PICTURE X.
+           02  CTAS4H    PICTURE X.
+           02  CTAS4O  PIC X(3).
+           02  FILLER PICTURE X(3).
+           02  SLD4C    PICTURE X.
+           02  SLD4H    PICTURE X.
+           02  SLD4O  PIC X(18).
+           02  FILLER PICTURE X(3).
+           02  RESP4C    PICTURE X.
+           02  RESP4H    PICTURE X.
+           02  RESP4O  PIC X(1).
+           02  FILLER PICTURE X(3).
+           02  MSJ4C    PICTURE X.
+           02  MSJ4H    PICTURE X.
+           02  MSJ4O  PIC X(69).
+       01  BKCLI05I.
+           02  FILLER PIC X(12).
+           02  FCH5L    COMP  PIC  S9(4).
+           02  FCH5F    PICTURE X.
+           02  FILLER REDEFINES FCH5F.
+             03 FCH5A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  FCH5I  PIC X(10).
+           02  HRA5L    COMP  PIC  S9(4).
+           02  HRA5F    PICTURE X.
+           02  FILLER REDEFINES HRA5F.
+             03 HRA5A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  HRA5I  PIC X(8).
+           02  DOCBUS5L    COMP  PIC  S9(4).
+           02  DOCBUS5F    PICTURE X.
+           02  FILLER REDEFINES DOCBUS5F.
+             03 DOCBUS5A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  DOCBUS5I  PIC X(9).
+           02  ID5L    COMP  PIC  S9(4).
+           02  ID5F    PICTURE X.
+           02  FILLER REDEFINES ID5F.
+             03 ID5A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  ID5I  PIC X(10).
+           02  DOC5L    COMP  PIC  S9(4).
+           02  DOC5F    PICTURE X.
+           02  FILLER REDEFINES DOC5F.
+             03 DOC5A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  DOC5I  PIC X(9).
+           02  NMB5L    COMP  PIC  S9(4).
+           02  NMB5F    PICTURE X.
+           02  FILLER REDEFINES NMB5F.
+             03 NMB5A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  NMB5I  PIC X(30).
+           02  TEL5L    COMP  PIC  S9(4).
+           02  TEL5F    PICTURE X.
+           02  FILLER REDEFINES TEL5F.
+             03 TEL5A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  TEL5I  PIC X(9).
+           02  EST5L    COMP  PIC  S9(4).
+           02  EST5F    PICTURE X.
+           02  FILLER REDEFINES EST5F.
+             03 EST5A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  EST5I  PIC X(1).
+           02  FALTA5L    COMP  PIC  S9(4).
+           02  FALTA5F    PICTURE X.
+           02  FILLER REDEFINES FALTA5F.
+             03 FALTA5A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  FALTA5I  PIC X(10).
+           02  RESP5L    COMP  PIC  S9(4).
+           02  RESP5F    PICTURE X.
+           02  FILLER REDEFINES RESP5F.
+             03 RESP5A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  RESP5I  PIC X(1).
+           02  MSJ5L    COMP  PIC  S9(4).
+           02  MSJ5F    PICTURE X.
+           02  FILLER REDEFINES MSJ5F.
+             03 MSJ5A    PICTURE X.
+           02  FILLER   PICTURE X(2).
+           02  MSJ5I  PIC X(69).
+       01  BKCLI05O REDEFINES BKCLI05I.
+           02  FILLER PIC X(12).
+           02  FILLER PICTURE X(3).
+           02  FCH5C    PICTURE X.
+           02  FCH5H    PICTURE X.
+           02  FCH5O  PIC X(10).
+           02  FILLER PICTURE X(3).
+           02  HRA5C    PICTURE X.
+           02  HRA5H    PICTURE X.
+           02  HRA5O  PIC X(8).
+           02  FILLER PICTURE X(3).
+           02  DOCBUS5C    PICTURE X.
+           02  DOCBUS5H    PICTURE X.
+           02  DOCBUS5O  PIC X(9).
+           02  FILLER PICTURE X(3).
+           02  ID5C    PICTURE X.
+           02  ID5H    PICTURE X.
+           02  ID5O  PIC X(10).
+           02  FILLER PICTURE X(3).
+           02  DOC5C    PICTURE X.
+           02  DOC5H    PICTURE X.
+           02  DOC5O  PIC X(9).
+           02  FILLER PICTURE X(3).
+           02  NMB5C    PICTURE X.
+           02  NMB5H    PICTURE X.
+           02  NMB5O  PIC X(30).
+           02  FILLER PICTURE X(3).
+           02  TEL5C    PICTURE X.
+           02  TEL5H    PICTURE X.
+           02  TEL5O  PIC X(9).
+           02  FILLER PICTURE X(3).
+           02  EST5C    PICTURE X.
+           02  EST5H    PICTURE X.
+           02  EST5O  PIC X(1).
+           02  FILLER PICTURE X(3).
+           02  FALTA5C    PICTURE X.
+           02  FALTA5H    PICTURE X.
+           02  FALTA5O  PIC X(10).
+           02  FILLER PICTURE X(3).
+           02  RESP5C    PICTURE X.
+           02  RESP5H    PICTURE X.
+           02  RESP5O  PIC X(1).
+           02  FILLER PICTURE X(3).
+           02  MSJ5C    PICTURE X.
+           02  MSJ5H    PICTURE X.
+           02  MSJ5O  PIC X(69).
