@@ -1,0 +1,27 @@
+      ******************************************************************
+      * DCLGEN TABLE(BANK.CONTROL_ID)                                  *
+      *        LIBRARY(BANKPRJ.LIB.DCLGEN(CTRLID))                     *
+      *        ACTION(REPLACE)                                         *
+      *        LANGUAGE(COBOL)                                         *
+      *        NAMES(HV-)                                              *
+      *        STRUCTURE(HV-CLIENTE)                                   *
+      *        QUOTE                                                   *
+      *        DBCSDELIM(NO)                                           *
+      *        COLSUFFIX(YES)                                          *
+      * ... IS THE DCLGEN COMMAND THAT MADE THE FOLLOWING STATEMENTS   *
+      ******************************************************************
+           EXEC SQL DECLARE BANK.CONTROL_ID TABLE
+           ( ENTIDAD                        CHAR(12) NOT NULL,
+             ULTIMO_ID                      DECIMAL(12, 0) NOT NULL
+           ) END-EXEC.
+      ******************************************************************
+      * COBOL DECLARATION FOR TABLE BANK.CONTROL_ID                    *
+      ******************************************************************
+       01  HV-CLIENTE.
+      *                       ENTIDAD
+           10 HV-ENTIDAD           PIC X(12).
+      *                       ULTIMO_ID
+           10 HV-ULTIMO-ID         PIC S9(12)V USAGE COMP-3.
+      ******************************************************************
+      * THE NUMBER OF COLUMNS DESCRIBED BY THIS DECLARATION IS 2       *
+      ******************************************************************

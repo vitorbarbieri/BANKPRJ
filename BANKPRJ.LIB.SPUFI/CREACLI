@@ -1,0 +1,34 @@
+-- *************************************************************
+-- EXCLUIR TABLA CLIENTE
+-- *************************************************************
+
+-- DROP TABLE BANK.CLIENTE;
+
+-- COMMIT;
+
+-- *************************************************************
+-- CRIAR TABLA CLIENTE
+-- *************************************************************
+
+CREATE TABLE BANK.CLIENTE
+(
+    ID_CLIENTE  DECIMAL(10,0)  NOT NULL,
+    DOCID       CHAR(9)        NOT NULL,
+    NOMBRE      VARCHAR(30)    NOT NULL,
+    EMAIL       VARCHAR(38),
+    TELEFONO    CHAR(9),
+    FECHA_ALTA  DATE           NOT NULL,
+    FECHA_BAJA  DATE,
+    ESTADO      CHAR(1)        NOT NULL,
+
+    PRIMARY KEY (ID_CLIENTE)
+)
+IN BANKDB.BANKTS;
+
+CREATE UNIQUE INDEX CLIENTE_BANK_IPK ON BANK.CLIENTE
+  (ID_CLIENTE)
+  CLUSTER CLOSE NO
+  USING STOGROUP BANKSG
+  BUFFERPOOL BP1;
+
+COMMIT;

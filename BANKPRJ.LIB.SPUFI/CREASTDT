@@ -1,0 +1,48 @@
+-- *********************************************************
+-- EXCLUIR TABLESPACE
+--         DATABASE
+--         STORAGE GROUP
+-- *********************************************************
+
+-- DROP TABLESPACE BANKDB.BANKTS;
+-- DROP DATABASE BANKDB;
+-- DROP STOGROUP BANKSG;
+
+-- COMMIT;
+
+-- *********************************************************
+-- CREAR STORAGE GROUP
+-- *********************************************************
+
+CREATE STOGROUP BANKSG
+  VOLUMES (CURSO)
+  VCAT BANKCT;
+
+-- *********************************************************
+-- CREAR DATABASE
+-- *********************************************************
+
+CREATE DATABASE BANKDB
+  CCSID EBCDIC
+  BUFFERPOOL BP1
+  STOGROUP BANKSG;
+
+-- *********************************************************
+-- CREAR TABLESPACE
+-- *********************************************************
+
+CREATE TABLESPACE BANKTS
+  IN BANKDB
+  USING STOGROUP BANKSG
+  PRIQTY 250
+  SECQTY 100
+  ERASE NO
+  FREEPAGE 10
+  PCTFREE 10
+  BUFFERPOOL BP1
+  COMPRESS NO
+  LOCKSIZE ANY
+  LOCKMAX SYSTEM
+  CLOSE YES;
+
+COMMIT;

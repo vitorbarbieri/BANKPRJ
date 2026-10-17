@@ -1,0 +1,51 @@
+      ******************************************************************
+      * DCLGEN TABLE(BANK.CLIENTE)                                     *
+      *        LIBRARY(BANKPRJ.LIB.DCLGEN(CLIENTE))                    *
+      *        ACTION(REPLACE)                                         *
+      *        LANGUAGE(COBOL)                                         *
+      *        NAMES(HV-)                                              *
+      *        STRUCTURE(HV-CLIENTE)                                   *
+      *        QUOTE                                                   *
+      *        DBCSDELIM(NO)                                           *
+      *        COLSUFFIX(YES)                                          *
+      * ... IS THE DCLGEN COMMAND THAT MADE THE FOLLOWING STATEMENTS   *
+      ******************************************************************
+           EXEC SQL DECLARE BANK.CLIENTE TABLE
+           ( ID_CLIENTE                     DECIMAL(10, 0) NOT NULL,
+             DOCID                          CHAR(9) NOT NULL,
+             NOMBRE                         VARCHAR(30) NOT NULL,
+             EMAIL                          VARCHAR(38),
+             TELEFONO                       CHAR(9),
+             FECHA_ALTA                     DATE NOT NULL,
+             FECHA_BAJA                     DATE,
+             ESTADO                         CHAR(1) NOT NULL
+           ) END-EXEC.
+      ******************************************************************
+      * COBOL DECLARATION FOR TABLE BANK.CLIENTE                       *
+      ******************************************************************
+       01  HV-CLIENTE.
+      *                       ID_CLIENTE
+           10 HV-ID-CLIENTE        PIC S9(10)V USAGE COMP-3.
+      *                       DOCID
+           10 HV-DOCID             PIC X(9).
+           10 HV-NOMBRE.
+      *                       NOMBRE LENGTH
+              49 HV-NOMBRE-LEN     PIC S9(4) USAGE COMP.
+      *                       NOMBRE
+              49 HV-NOMBRE-TEXT    PIC X(30).
+           10 HV-EMAIL.
+      *                       EMAIL LENGTH
+              49 HV-EMAIL-LEN      PIC S9(4) USAGE COMP.
+      *                       EMAIL
+              49 HV-EMAIL-TEXT     PIC X(38).
+      *                       TELEFONO
+           10 HV-TELEFONO          PIC X(9).
+      *                       FECHA_ALTA
+           10 HV-FECHA-ALTA        PIC X(10).
+      *                       FECHA_BAJA
+           10 HV-FECHA-BAJA        PIC X(10).
+      *                       ESTADO
+           10 HV-ESTADO            PIC X(1).
+      ******************************************************************
+      * THE NUMBER OF COLUMNS DESCRIBED BY THIS DECLARATION IS 8       *
+      ******************************************************************

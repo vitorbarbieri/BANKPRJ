@@ -1,0 +1,28 @@
+-- *************************************************************
+-- EXCLUIR TABLA CONTROL_ID
+-- *************************************************************
+
+-- DROP TABLE BANK.CONTROL_ID;
+
+-- COMMIT;
+
+-- *************************************************************
+-- CRIAR TABLA CONTROL_ID
+-- *************************************************************
+
+CREATE TABLE BANK.CONTROL_ID
+(
+    ENTIDAD    CHAR(12)       NOT NULL,
+    ULTIMO_ID  DECIMAL(12,0)  NOT NULL,
+
+    PRIMARY KEY (ENTIDAD)
+)
+IN BANKDB.BANKTS;
+
+CREATE UNIQUE INDEX CONTROL_ID_BANK_IPK ON BANK.CONTROL_ID
+  (ENTIDAD)
+  CLUSTER CLOSE NO
+  USING STOGROUP BANKSG
+  BUFFERPOOL BP1;
+
+COMMIT;
