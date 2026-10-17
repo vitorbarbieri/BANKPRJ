@@ -1,0 +1,219 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. BKGECLI.
+
+      *>---------------------------------------------------------------
+      *>
+      *>      --------------------------------------------------
+      *>                  PROGRAMA RESPONSABLE DE LA
+      *>                      GESTION DE CLIENTES
+      *>      --------------------------------------------------
+      *>
+      *>---------------------------------------------------------------
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+       COPY BKMCLI.
+       COPY DFHBMSCA.
+       COPY DFHAID.
+
+      *>   ESTRUCTURA PARA CENTRALIZAR LOS MENSAJES DEL SISTEMA
+       01  MSJ-SIN-ACC.
+           03 MSJ-SIN-ACC-1            PIC X(38)
+              VALUE 'ERROR: ACCESO NO PERMITIDO. INICIE LA '.
+           03 MSJ-SIN-ACC-2            PIC X(35)
+              VALUE 'TRANSACCION DESDE EL MENU PRINCIPAL'.
+       77  MSJ-ING-OPC                 PIC X(24)
+           VALUE 'DEBE INFORMAR UNA OPCION'.
+       77  MSJ-OPC-NO-VAL              PIC X(49)
+           VALUE 'OPCION NO VALIDA. REVISE LAS OPCIONES DISPONIBLES'.
+
+       01  WS-CAMPOS-TRABAJO.
+           03 WS-COMMAREA.
+              05 WS-COM-OPCION         PIC 9(01).
+                 88 WS-PRIMERA-VEZ         VALUE 1.
+                 88 WS-SEGUNDA-VEZ         VALUE 2.
+           03 WS-FECHA-HORA            PIC S9(15) COMP-3.
+           03 WS-FECHA                 PIC X(10).
+           03 WS-HORA                  PIC X(08).
+           03 WS-OPCION                PIC X(01).
+              88 WS-ALTA                   VALUE '1'.
+              88 WS-CONSULTA               VALUE '2'.
+              88 WS-MODIFICACION           VALUE '3'.
+              88 WS-BAJA                   VALUE '4'.
+              88 WS-REACTIVACION           VALUE '5'.
+              88 WS-SALIR                  VALUE '9'.
+           03 WS-EIBAID                PIC X(01).
+              88 WS-ENTER                  VALUE X'7D'.
+              88 WS-PF3                    VALUE X'F3'.
+              88 WS-PF5                    VALUE X'F5'.
+              88 WS-PF12                   VALUE X'7C'.
+           03 WS-ERROR.
+              05 WS-RESP               PIC S9(08) COMP.
+              05 WS-RESP2              PIC S9(08) COMP.
+              05 WS-RESP-LIMPIO        PIC X(20).
+              05 WS-RESP2-LIMPIO       PIC X(20).
+              05 WS-MENSAJE            PIC X(78).
+           03 WS-FORMATEAR.
+              05 WS-CAMPO-ENTRADA      PIC X(20).
+              05 WS-CAMPO-SALIDA       PIC X(20).
+              05 WS-ENCONTRADO         PIC X(01).
+              05 WS-I                  PIC 9(02).
+              05 WS-J                  PIC 9(02).
+
+       LINKAGE SECTION.
+       01  DFHCOMMAREA.
+           05 LK-OPCION                PIC 9(01).
+
+      *>---------------------------------------------------------------
+       PROCEDURE DIVISION.
+       0000-PRINCIPAL.
+           IF  EIBCALEN = ZEROS
+               MOVE MSJ-SIN-ACC        TO WS-MENSAJE
+               PERFORM 9999-VOLVER-MENU-PRINCIPAL
+           ELSE
+               PERFORM 1900-INICIALIZAR-MENU
+               MOVE DFHCOMMAREA        TO WS-COMMAREA
+
+               IF  WS-PRIMERA-VEZ
+                   PERFORM 1900-MOSTRAR-PANTALLA-MENU
+               ELSE
+                   PERFORM 1000-RECIBIR-MENU
+               END-IF
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+      *>   SECCION 1000 - MENU CLIENTE
+      *>---------------------------------------------------------------
+       1000-RECIBIR-MENU.
+           EXEC CICS
+                RECEIVE
+                MAP('BKCLI00')
+                MAPSET('BKMCLI')
+                RESP(WS-RESP)
+                RESP2(WS-RESP2)
+           END-EXEC
+
+           PERFORM 1100-EVALUAR-TECLA
+           .
+
+      *>---------------------------------------------------------------
+       1100-EVALUAR-TECLA.
+           MOVE EIBAID                 TO WS-EIBAID
+           MOVE OPC0I                  TO WS-OPCION
+
+           EVALUATE TRUE
+               WHEN WS-PF3
+               OR   WS-SALIR
+                    PERFORM 9999-VOLVER-MENU-PRINCIPAL
+               WHEN WS-PF12
+                    PERFORM 1900-MOSTRAR-PANTALLA-MENU
+               WHEN WS-ENTER
+                    PERFORM 1200-PROCESAR-OPCION
+               WHEN OTHER
+                    PERFORM 1900-MOSTRAR-PANTALLA-MENU
+           END-EVALUATE
+           .
+
+      *>---------------------------------------------------------------
+       1200-PROCESAR-OPCION.
+           IF  OPC0L = ZEROS
+           OR  OPC0I = SPACE
+               MOVE MSJ-ING-OPC        TO MSJ0O
+               MOVE DFHRED             TO OPC0C
+               MOVE DFHRED             TO MSJ0C
+               PERFORM 1900-MOSTRAR-PANTALLA-MENU
+           END-IF
+
+           EVALUATE TRUE
+               WHEN WS-ALTA
+                    PERFORM 1900-MOSTRAR-PANTALLA-MENU
+               WHEN WS-CONSULTA
+                    PERFORM 1900-MOSTRAR-PANTALLA-MENU
+               WHEN WS-MODIFICACION
+                    PERFORM 1900-MOSTRAR-PANTALLA-MENU
+               WHEN WS-BAJA
+                    PERFORM 1900-MOSTRAR-PANTALLA-MENU
+               WHEN WS-REACTIVACION
+                    PERFORM 1900-MOSTRAR-PANTALLA-MENU
+               WHEN OTHER
+                    MOVE MSJ-OPC-NO-VAL TO MSJ0O
+                    MOVE DFHRED        TO OPC0C
+                    MOVE DFHRED        TO MSJ0C
+                    PERFORM 1900-MOSTRAR-PANTALLA-MENU
+           END-EVALUATE
+           .
+
+      *>---------------------------------------------------------------
+       1900-INICIALIZAR-MENU.
+           INITIALIZE                  WS-CAMPOS-TRABAJO
+           MOVE LOW-VALUES             TO BKCLI00I
+           .
+
+      *>---------------------------------------------------------------
+       1900-MOSTRAR-PANTALLA-MENU.
+           MOVE 2                      TO WS-COM-OPCION
+
+           PERFORM 9000-OBTENER-FECHA-HORA
+           MOVE WS-FECHA               TO FCH0O
+           MOVE WS-HORA                TO HRA0O
+
+           EXEC CICS
+                SEND
+                MAP('BKCLI00')
+                MAPSET('BKMCLI')
+                ERASE
+                FREEKB
+           END-EXEC
+
+           EXEC CICS
+                RETURN
+                TRANSID('BKCL')
+                COMMAREA(WS-COMMAREA)
+                LENGTH(LENGTH OF WS-COMMAREA)
+           END-EXEC
+           .
+
+      *>---------------------------------------------------------------
+      *>   SECCION 9000 - PARRAFOS COMUNES DEL PROGRAMA
+      *>---------------------------------------------------------------
+       9000-OBTENER-FECHA-HORA.
+           EXEC CICS
+                ASKTIME
+                ABSTIME(WS-FECHA-HORA)
+           END-EXEC
+
+           EXEC CICS
+                FORMATTIME
+                ABSTIME(WS-FECHA-HORA)
+                DATESEP('-')
+                TIMESEP(':')
+                YYYYMMDD(WS-FECHA)
+                TIME(WS-HORA)
+           END-EXEC
+           .
+
+      *>---------------------------------------------------------------
+       9999-VOLVER-MENU-PRINCIPAL.
+           IF  EIBCALEN = ZEROS
+               EXEC CICS
+                    SEND
+                    TEXT
+                    FROM(WS-MENSAJE)
+                    LENGTH(LENGTH OF WS-MENSAJE)
+                    ALARM
+                    ERASE
+                    FREEKB
+               END-EXEC
+
+               EXEC CICS
+                    RETURN
+                    TRANSID('BANK')
+               END-EXEC
+           ELSE
+               EXEC CICS
+                    XCTL
+                    PROGRAM('BKMENU')
+               END-EXEC
+           END-IF
+           .
