@@ -54,6 +54,16 @@
            VALUE 'CLIENTE DADO DE ALTA CORRECTAMENTE. ID ASIGNADO: '.
        77  MSJ-ERR-INS-CLI             PIC X(36)
            VALUE 'ERROR INSERT BANK.CLIENTE - SQLCODE '.
+       77  MSJ-ING-DOC-O-ID-CLI        PIC X(52)
+           VALUE 'INFORME EL DOCUMENTO DE IDENTIDAD O EL ID DE CLIENTE'.
+       77  MSJ-ING-UN-CRIT-BUSQ        PIC X(49)
+           VALUE 'INFORME SOLO UNO DE LOS DOS CRITERIOS DE BUSQUEDA'.
+       77  MSJ-ID-CLI-NO-NUM           PIC X(34)
+           VALUE 'EL ID DE CLIENTE DEBE SER NUMERICO'.
+       77  MSJ-CLI-LOC                 PIC X(18)
+           VALUE 'CLIENTE LOCALIZADO'.
+       77  MSJ-CLI-NO-ENCONT           PIC X(21)
+           VALUE 'CLIENTE NO ENCONTRADO'.
 
        01  WS-CAMPOS-TRABAJO.
            03 WS-COMMAREA.
@@ -68,7 +78,7 @@
                  88 WS-PROG-BAJA           VALUE 4.
                  88 WS-PROG-REACTIVACION   VALUE 5.
               05 WS-CAMPOS-CLIENTE.
-                 08 WS-COM-ID          PIC 9(10).
+                 08 WS-COM-ID          PIC X(10).
                  08 WS-COM-DOC         PIC X(09).
                  08 WS-COM-NOMBRE      PIC X(30).
                  08 WS-COM-EMAIL       PIC X(38).
@@ -77,6 +87,9 @@
                  08 WS-COM-FBAJA       PIC X(10).
                  08 WS-COM-ESTADO      PIC X(01).
                  08 WS-COM-CUENTAS     PIC X(03).
+              05 WS-CAMPOS-BUSQUEADA.
+                 07 WS-COM-ID-BUSQ     PIC X(10).
+                 07 WS-COM-DOC-BUSQ    PIC X(09).
            03 WS-FECHA-HORA            PIC S9(15) COMP-3.
            03 WS-FECHA                 PIC X(10).
            03 WS-HORA                  PIC X(08).
@@ -116,13 +129,16 @@
            03 WS-SQLCODE               PIC S9(09).
            03 HV-CLIENTE-IND.
               05 WS-IND-EMAIL          PIC S9(04) COMP.
-              05 WS-IND-TELEFONO       PIC S9(04) COMP.
+              05 WS-IND-TEL            PIC S9(04) COMP.
+           03 WS-TP-BUSQUEDA           PIC 9(01).
+              88 WS-BUSQUEDA-ID            VALUE 1.
+              88 WS-BUSQUEDA-DOC           VALUE 2.
 
        LINKAGE SECTION.
        01  DFHCOMMAREA.
            03 LK-OPCION                PIC 9(01).
            03 LK-PROGRAMA              PIC 9(01).
-           03 LK-COM-ID                PIC 9(10).
+           03 LK-COM-ID                PIC X(10).
            03 LK-DOC                   PIC X(09).
            03 LK-NOMBRE                PIC X(30).
            03 LK-EMAIL                 PIC X(38).
@@ -130,6 +146,7 @@
            03 LK-COM-FALTA             PIC X(10).
            03 LK-COM-FBAJA             PIC X(10).
            03 LK-COM-ESTADO            PIC X(01).
+           03 LK-COM-CUENTAS           PIC X(03).
 
       *>---------------------------------------------------------------
        PROCEDURE DIVISION.
@@ -160,7 +177,9 @@
                WHEN WS-PROG-ALTA
                     PERFORM 2900-INICIALIZAR-ALTA
                     PERFORM 2000-RECIBIR-ALTA
-      *        WHEN WS-PROG-CONSULTA
+               WHEN WS-PROG-CONSULTA
+                    PERFORM 3900-INICIALIZAR-CONSULTA
+                    PERFORM 3000-RECIBIR-CONSULTA
       *        WHEN WS-PROG-MODIFICACION
       *        WHEN WS-PROG-BAJA
       *        WHEN WS-PROG-REACTIVACION
@@ -218,7 +237,8 @@
                     PERFORM 2900-INICIALIZAR-ALTA
                     PERFORM 2900-MOSTRAR-PANTALLA-ALTA
                WHEN WS-CONSULTA
-                    PERFORM 1900-MOSTRAR-PANTALLA-MENU
+                    PERFORM 3900-INICIALIZAR-CONSULTA
+                    PERFORM 3900-MOSTRAR-PANTALLA-CONSULTA
                WHEN WS-MODIFICACION
                     PERFORM 1900-MOSTRAR-PANTALLA-MENU
                WHEN WS-BAJA
@@ -305,7 +325,7 @@
            PERFORM 2220-VALIDAR-DATOS
 
            IF  WS-SIN-ERROR
-               PERFORM 2300-MOVER-DATOS-CLIENTE
+               PERFORM 2230-MOVER-DATOS-CLIENTE
            ELSE
                MOVE DFHRED             TO MSJ1C
                PERFORM 2900-MOSTRAR-PANTALLA-ALTA
@@ -424,11 +444,6 @@
                    END-IF
                END-IF
            END-IF
-
-           IF  WS-SIN-ERROR
-               MOVE DFHGREEN           TO DOC1C
-               MOVE DFHGREEN           TO MSJ1C
-           END-IF
            .
 
       *>---------------------------------------------------------------
@@ -439,11 +454,6 @@
                MOVE DFHRED             TO NMB1C
                MOVE -1                 TO NMB1L
                MOVE 1                  TO WS-ID-STATUS-ERROR
-           END-IF
-
-           IF  WS-SIN-ERROR
-               MOVE DFHGREEN           TO NMB1C
-               MOVE DFHGREEN           TO MSJ1C
            END-IF
            .
 
@@ -470,11 +480,6 @@
                    MOVE 1              TO WS-ID-STATUS-ERROR
                END-IF
            END-IF
-
-           IF  WS-SIN-ERROR
-               MOVE DFHGREEN           TO MAIL1C
-               MOVE DFHGREEN           TO MSJ1C
-           END-IF
            .
 
       *>---------------------------------------------------------------
@@ -488,15 +493,10 @@
                    MOVE 1              TO WS-ID-STATUS-ERROR
                END-IF
            END-IF
-
-           IF  WS-SIN-ERROR
-               MOVE DFHGREEN           TO TEL1C
-               MOVE DFHGREEN           TO MSJ1C
-           END-IF
            .
 
       *>---------------------------------------------------------------
-       2300-MOVER-DATOS-CLIENTE.
+       2230-MOVER-DATOS-CLIENTE.
            EXEC SQL
                 SELECT ULTIMO_ID
                 INTO   :HV-ULTIMO-ID
@@ -547,7 +547,7 @@
 
            IF  SQLCODE = ZEROS
            OR  SQLCODE = 100
-               PERFORM 2310-SALVAR-CLIENTE
+               PERFORM 2231-SALVAR-CLIENTE
            ELSE
                EXEC SQL ROLLBACK END-EXEC
 
@@ -559,7 +559,7 @@
            .
 
       *>---------------------------------------------------------------
-       2310-SALVAR-CLIENTE.
+       2231-SALVAR-CLIENTE.
            MOVE HV-ULTIMO-ID           TO HV-ID-CLIENTE
 
            MOVE WS-COM-DOC             TO HV-DOCID
@@ -579,7 +579,7 @@
            AND WS-COM-TEL NOT = LOW-VALUES
                MOVE WS-COM-TEL         TO HV-TELEFONO
            ELSE
-               MOVE -1                 TO WS-IND-TELEFONO
+               MOVE -1                 TO WS-IND-TEL
            END-IF
 
            PERFORM 9000-OBTENER-FECHA-HORA
@@ -600,7 +600,7 @@
                        :HV-DOCID,
                        :HV-NOMBRE,
                        :HV-EMAIL      :WS-IND-EMAIL,
-                       :HV-TELEFONO   :WS-IND-TELEFONO,
+                       :HV-TELEFONO   :WS-IND-TEL,
                        :HV-FECHA-ALTA,
                        :HV-ESTADO)
            END-EXEC
@@ -664,6 +664,310 @@
                     ALARM
                END-EXEC
            END-IF
+
+           EXEC CICS
+                RETURN
+                TRANSID('BKCL')
+                COMMAREA(WS-COMMAREA)
+                LENGTH(LENGTH OF WS-COMMAREA)
+           END-EXEC
+           .
+
+      *>---------------------------------------------------------------
+      *>   SECCION 3000 - CONSULTA CLIENTE
+      *>---------------------------------------------------------------
+       3000-RECIBIR-CONSULTA.
+           MOVE DFHCOMMAREA            TO WS-COMMAREA
+
+           EXEC CICS
+                RECEIVE
+                MAP('BKCLI02')
+                MAPSET('BKMCLI')
+                RESP(WS-RESP)
+                RESP2(WS-RESP2)
+           END-EXEC
+
+           PERFORM 3100-EVALUAR-TECLA
+           .
+
+      *>---------------------------------------------------------------
+       3100-EVALUAR-TECLA.
+           MOVE EIBAID                 TO WS-EIBAID
+
+           EVALUATE TRUE
+               WHEN WS-PF3
+                    PERFORM 1900-INICIALIZAR-MENU
+                    PERFORM 1900-MOSTRAR-PANTALLA-MENU
+               WHEN WS-PF12
+                    PERFORM 3900-INICIALIZAR-CONSULTA
+                    PERFORM 3900-MOSTRAR-PANTALLA-CONSULTA
+               WHEN WS-ENTER
+                    PERFORM 3200-PROCESAR-CAMPOS
+               WHEN OTHER
+                    PERFORM 3900-MOSTRAR-PANTALLA-CONSULTA
+           END-EVALUATE
+           .
+
+      *>---------------------------------------------------------------
+       3200-PROCESAR-CAMPOS.
+           PERFORM 3210-CAPTURAR-DATOS-PANTALLA
+
+           PERFORM 3220-VALIDAR-DATOS
+
+           IF  WS-SIN-ERROR
+               PERFORM 3230-BUSCAR-CLIENTE
+           ELSE
+               MOVE DFHRED             TO MSJ2C
+               PERFORM 3900-MOSTRAR-PANTALLA-CONSULTA
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       3210-CAPTURAR-DATOS-PANTALLA.
+           IF  IDBUS2L > 0
+           AND IDBUS2I NOT = SPACES
+           AND IDBUS2I NOT = LOW-VALUES
+               MOVE IDBUS2I            TO WS-COM-ID-BUSQ
+           ELSE
+               MOVE SPACES             TO WS-COM-ID-BUSQ
+           END-IF
+
+           IF  DOCBUS2L > 0
+           AND DOCBUS2I NOT = SPACES
+           AND DOCBUS2I NOT = LOW-VALUES
+               MOVE DOCBUS2I           TO WS-COM-DOC-BUSQ
+           ELSE
+               MOVE SPACES             TO WS-COM-DOC-BUSQ
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       3220-VALIDAR-DATOS.
+           IF  (WS-COM-ID-BUSQ = SPACES
+           OR   WS-COM-ID-BUSQ = LOW-VALUES)
+           AND (WS-COM-DOC-BUSQ = SPACES
+           OR   WS-COM-DOC-BUSQ = LOW-VALUES)
+               MOVE MSJ-ING-DOC-O-ID-CLI TO MSJ2O
+               MOVE DFHRED             TO IDBUS2C
+               MOVE DFHRED             TO DOCBUS2C
+               MOVE -1                 TO DOCBUS2L
+               MOVE 1                  TO WS-ID-STATUS-ERROR
+           END-IF
+
+           IF  WS-SIN-ERROR
+           AND WS-COM-ID-BUSQ NOT = SPACES
+           AND WS-COM-ID-BUSQ NOT = LOW-VALUES
+           AND WS-COM-DOC-BUSQ NOT = SPACES
+           AND WS-COM-DOC-BUSQ NOT = LOW-VALUES
+               MOVE MSJ-ING-UN-CRIT-BUSQ TO MSJ2O
+               MOVE DFHRED             TO IDBUS2C
+               MOVE DFHRED             TO DOCBUS2C
+               MOVE -1                 TO DOCBUS2L
+               MOVE 1                  TO WS-ID-STATUS-ERROR
+           END-IF
+
+           IF  WS-SIN-ERROR
+           AND WS-COM-ID-BUSQ NOT = SPACES
+           AND WS-COM-ID-BUSQ NOT = LOW-VALUES
+           AND WS-COM-ID-BUSQ IS NOT NUMERIC
+               MOVE MSJ-ID-CLI-NO-NUM  TO MSJ2O
+               MOVE DFHRED             TO IDBUS2C
+               MOVE -1                 TO IDBUS2L
+               MOVE 1                  TO WS-ID-STATUS-ERROR
+           END-IF
+
+           IF  WS-SIN-ERROR
+               PERFORM 3221-VALIDAR-DOCUMENTO
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       3221-VALIDAR-DOCUMENTO.
+           IF  WS-COM-DOC-BUSQ NOT = SPACES
+           AND WS-COM-DOC-BUSQ NOT = LOW-VALUES
+               MOVE 1                  TO WS-ID-STATUS-DOC
+
+               IF  WS-COM-DOC-BUSQ(1:8) IS NUMERIC
+               AND WS-COM-DOC-BUSQ(9:1) IS ALPHABETIC
+               AND WS-COM-DOC-BUSQ(9:1) NOT = SPACES
+                   MOVE ZERO           TO WS-ID-STATUS-DOC
+               ELSE
+                   IF (WS-COM-DOC-BUSQ(1:1) = 'X'
+                   OR  WS-COM-DOC-BUSQ(1:1) = 'Y'
+                   OR  WS-COM-DOC-BUSQ(1:1) = 'Z')
+                   AND WS-COM-DOC-BUSQ(2:7) IS NUMERIC
+                   AND WS-COM-DOC-BUSQ(9:1) IS ALPHABETIC
+                       MOVE ZERO       TO WS-ID-STATUS-DOC
+                   END-IF
+               END-IF
+
+               IF  WS-DOC-NOK
+                   MOVE MSJ-FMT-DOC-INCORR TO MSJ2O
+                   MOVE DFHRED         TO DOCBUS2C
+                   MOVE -1             TO DOCBUS2L
+                   MOVE 1              TO WS-ID-STATUS-ERROR
+               END-IF
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       3230-BUSCAR-CLIENTE.
+           INITIALIZE                  WS-CAMPOS-CLIENTE
+
+           IF  WS-COM-ID-BUSQ NOT = SPACES
+           AND WS-COM-ID-BUSQ NOT = LOW-VALUES
+               MOVE 1                  TO WS-TP-BUSQUEDA
+               MOVE WS-COM-ID-BUSQ     TO HV-ID-CLIENTE
+
+               MOVE SPACES             TO HV-EMAIL-TEXT
+               MOVE SPACES             TO HV-TELEFONO
+               MOVE ZEROS              TO WS-IND-EMAIL
+               MOVE ZEROS              TO WS-IND-TEL
+
+               EXEC SQL
+                    SELECT ID_CLIENTE,
+                           DOCID,
+                           NOMBRE,
+                           EMAIL,
+                           TELEFONO,
+                           FECHA_ALTA,
+                           ESTADO
+                    INTO   :HV-ID-CLIENTE,
+                           :HV-DOCID,
+                           :HV-NOMBRE,
+                           :HV-EMAIL :WS-IND-EMAIL,
+                           :HV-TELEFONO :WS-IND-TEL,
+                           :HV-FECHA-ALTA,
+                           :HV-ESTADO
+                    FROM   BANK.CLIENTE
+                    WHERE  ID_CLIENTE = :HV-ID-CLIENTE
+               END-EXEC
+           ELSE
+               MOVE 2                  TO WS-TP-BUSQUEDA
+
+               EXEC SQL
+                    SELECT ID_CLIENTE,
+                           DOCID,
+                           NOMBRE,
+                           EMAIL,
+                           TELEFONO,
+                           FECHA_ALTA,
+                           ESTADO
+                    INTO   :HV-ID-CLIENTE,
+                           :HV-DOCID,
+                           :HV-NOMBRE,
+                           :HV-EMAIL :WS-IND-EMAIL,
+                           :HV-TELEFONO :WS-IND-TEL,
+                           :HV-FECHA-ALTA,
+                           :HV-ESTADO
+                    FROM   BANK.CLIENTE
+                    WHERE  DOCID = :WS-COM-DOC-BUSQ
+               END-EXEC
+           END-IF
+
+           IF  SQLCODE = ZEROS
+               INITIALIZE              WS-CAMPOS-BUSQUEADA
+               MOVE MSJ-CLI-LOC        TO MSJ2O
+
+               MOVE HV-ID-CLIENTE      TO WS-COM-ID
+               MOVE HV-DOCID           TO WS-COM-DOC
+               MOVE HV-NOMBRE-TEXT     TO WS-COM-NOMBRE
+
+               IF  WS-IND-EMAIL NOT = -1
+                   MOVE HV-EMAIL-TEXT  TO WS-COM-EMAIL
+               END-IF
+
+               IF  WS-IND-TEL NOT = -1
+                   MOVE HV-TELEFONO    TO WS-COM-TEL
+               END-IF
+
+               MOVE HV-FECHA-ALTA      TO WS-COM-FALTA
+               MOVE HV-ESTADO          TO WS-COM-ESTADO
+               MOVE '0'                TO WS-COM-CUENTAS
+
+               PERFORM 3900-MOSTRAR-PANTALLA-CONSULTA
+           ELSE
+               IF  SQLCODE = 100
+                   MOVE MSJ-CLI-NO-ENCONT TO MSJ2O
+                   MOVE DFHRED         TO MSJ2C
+                   MOVE 1              TO WS-ID-STATUS-ERROR
+
+                   IF  WS-BUSQUEDA-ID
+                       MOVE -1         TO IDBUS2L
+                       MOVE DFHRED     TO IDBUS2C
+                   ELSE
+                       MOVE -1         TO DOCBUS2L
+                       MOVE DFHRED     TO DOCBUS2C
+                   END-IF
+
+                   PERFORM 3900-MOSTRAR-PANTALLA-CONSULTA
+               ELSE
+                   MOVE SQLCODE        TO WS-SQLCODE
+                   STRING MSJ-ERR-SEL-CLI DELIMITED BY SIZE
+                          WS-SQLCODE      DELIMITED BY SIZE
+                                       INTO MSJ2O
+                   MOVE DFHRED         TO MSJ2C
+                   MOVE 1              TO WS-ID-STATUS-ERROR
+
+                   IF  WS-BUSQUEDA-ID
+                       MOVE -1         TO IDBUS2L
+                       MOVE DFHRED     TO IDBUS2C
+                   ELSE
+                       MOVE -1         TO DOCBUS2L
+                       MOVE DFHRED     TO DOCBUS2C
+                   END-IF
+
+                   PERFORM 3900-MOSTRAR-PANTALLA-CONSULTA
+               END-IF
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       3900-INICIALIZAR-CONSULTA.
+           INITIALIZE                  WS-CAMPOS-TRABAJO
+           MOVE LOW-VALUES             TO BKCLI02I
+           MOVE ZERO                   TO WS-ID-STATUS-ERROR
+           .
+
+      *>---------------------------------------------------------------
+       3900-MOSTRAR-PANTALLA-CONSULTA.
+           MOVE 2                      TO WS-COM-OPCION
+           MOVE 2                      TO WS-COM-PROGRAMA
+
+           MOVE WS-COM-ID              TO ID2O
+           MOVE WS-COM-DOC             TO DOC2O
+           MOVE WS-COM-NOMBRE          TO NMB2O
+           MOVE WS-COM-EMAIL           TO MAIL2O
+           MOVE WS-COM-TEL             TO TEL2O
+           MOVE WS-COM-FALTA           TO FALTA2O
+           MOVE WS-COM-ESTADO          TO EST2O
+           MOVE WS-COM-CUENTAS         TO CTAS2O
+           MOVE WS-COM-ID-BUSQ         TO IDBUS2O
+           MOVE WS-COM-DOC-BUSQ        TO DOCBUS2O
+
+           PERFORM 9000-OBTENER-FECHA-HORA
+           MOVE WS-FECHA               TO FCH2O
+           MOVE WS-HORA                TO HRA2O
+
+           IF  WS-SIN-ERROR
+               EXEC CICS
+                    SEND
+                    MAP('BKCLI02')
+                    MAPSET('BKMCLI')
+                    ERASE
+                    FREEKB
+               END-EXEC
+           ELSE
+               EXEC CICS
+                    SEND
+                    MAP('BKCLI02')
+                    MAPSET('BKMCLI')
+                    FREEKB
+                    CURSOR
+                    ALARM
+               END-EXEC
+           END-IF
+
 
            EXEC CICS
                 RETURN
