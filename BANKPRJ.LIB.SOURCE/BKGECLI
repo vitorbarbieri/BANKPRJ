@@ -90,6 +90,12 @@
               VALUE 'NO SE PUEDE BLOQUEAR: EL CLIENTE TIENE '.
            03 MSJ-CLI-BLOQ-SAL-1       PIC X(17)
               VALUE 'CUENTAS CON SALDO'.
+       77  MSJ-CLI-YA-ACT              PIC X(25)
+           VALUE 'EL CLIENTE YA ESTA ACTIVO'.
+       77  MSJ-CLI-REACT-CAN           PIC X(51)
+           VALUE 'OPERACION CANCELADA. NO SE HA REACTIVADO EL CLIENTE'.
+       77  MSJ-CLI-REACT-OK            PIC X(32)
+           VALUE 'CLIENTE REACTIVADO CORRECTAMENTE'.
 
        01  WS-CAMPOS-TRABAJO.
            03 WS-COMMAREA.
@@ -159,6 +165,7 @@
            03 HV-CLIENTE-IND.
               05 WS-IND-EMAIL          PIC S9(04) COMP.
               05 WS-IND-TEL            PIC S9(04) COMP.
+              05 WS-IND-FBAJA          PIC S9(04) COMP.
            03 WS-TP-BUSQUEDA           PIC 9(01).
               88 WS-BUSQUEDA-ID            VALUE 1.
               88 WS-BUSQUEDA-DOC           VALUE 2.
@@ -217,7 +224,9 @@
                WHEN WS-PROG-BAJA
                     PERFORM 5900-INICIALIZAR-BAJA
                     PERFORM 5000-RECIBIR-BAJA
-      *        WHEN WS-PROG-REACTIVACION
+               WHEN WS-PROG-REACTIVACION
+                    PERFORM 6900-INICIALIZAR-REACT
+                    PERFORM 6000-RECIBIR-REACT
            END-EVALUATE
            .
 
@@ -281,7 +290,8 @@
                     PERFORM 5900-INICIALIZAR-BAJA
                     PERFORM 5900-MOSTRAR-PANTALLA-BAJA
                WHEN WS-REACTIVACION
-                    PERFORM 1900-MOSTRAR-PANTALLA-MENU
+                    PERFORM 6900-INICIALIZAR-REACT
+                    PERFORM 6900-MOSTRAR-PANTALLA-REACT
                WHEN OTHER
                     MOVE MSJ-OPC-NO-VAL TO MSJ0O
                     MOVE DFHRED        TO OPC0C
@@ -1287,7 +1297,7 @@
                     PERFORM 5210-VALDIAR-SUELDO
 
                     IF  WS-SIN-ERROR
-                        PERFORM 5220-ACTUALIZAR-CLIENTE
+                        PERFORM 5220-BLOQUEAR-CLIENTE
                     END-IF
                WHEN 'N'
                     MOVE MSJ-CLI-BLOQ-CAN TO MSJ4O
@@ -1321,7 +1331,7 @@
            .
 
       *>---------------------------------------------------------------
-       5220-ACTUALIZAR-CLIENTE.
+       5220-BLOQUEAR-CLIENTE.
            PERFORM 9000-OBTENER-FECHA-HORA
            MOVE WS-FECHA               TO HV-FECHA-BAJA
 
@@ -1495,6 +1505,260 @@
                EXEC CICS
                     SEND
                     MAP('BKCLI04')
+                    MAPSET('BKMCLI')
+                    FREEKB
+                    CURSOR
+                    ALARM
+               END-EXEC
+           END-IF
+
+           PERFORM 9000-RETURN-TRANSID
+           .
+
+      *>---------------------------------------------------------------
+      *>   SECCION 6000 - REACTIVACION CLIENTE
+      *>---------------------------------------------------------------
+       6000-RECIBIR-REACT.
+           MOVE DFHCOMMAREA            TO WS-COMMAREA
+
+           EXEC CICS
+                RECEIVE
+                MAP('BKCLI05')
+                MAPSET('BKMCLI')
+                RESP(WS-RESP)
+                RESP2(WS-RESP2)
+           END-EXEC
+
+           PERFORM 6100-EVALUAR-TECLA
+           .
+
+      *>---------------------------------------------------------------
+       6100-EVALUAR-TECLA.
+           MOVE EIBAID                 TO WS-EIBAID
+
+           EVALUATE TRUE
+               WHEN WS-PF3
+                    PERFORM 1900-INICIALIZAR-MENU
+                    PERFORM 1900-MOSTRAR-PANTALLA-MENU
+               WHEN WS-PF12
+                    PERFORM 6900-INICIALIZAR-REACT
+                    PERFORM 6900-MOSTRAR-PANTALLA-REACT
+               WHEN WS-PF5
+                    PERFORM 6200-PROCESAR-CAMPOS
+               WHEN WS-ENTER
+                    PERFORM 6300-PROCESAR-CAMPOS
+               WHEN OTHER
+                    PERFORM 9000-SEND-CONTROL
+           END-EVALUATE
+           .
+
+      *>---------------------------------------------------------------
+       6200-PROCESAR-CAMPOS.
+           IF  WS-COM-ID = SPACES
+               MOVE MSJ-LOC-CLI-BLOQ   TO MSJ5O
+               MOVE DFHRED             TO DOCBUS5C
+               MOVE -1                 TO DOCBUS5L
+               MOVE 1                  TO WS-ID-STATUS-ERROR
+               MOVE DFHRED             TO MSJ5C
+
+               PERFORM 6900-MOSTRAR-PANTALLA-REACT
+           END-IF
+
+           EVALUATE RESP5I
+               WHEN 'S'
+                    PERFORM 6220-ACTIVAR-CLIENTE
+               WHEN 'N'
+                    MOVE MSJ-CLI-REACT-CAN TO MSJ5O
+                    MOVE -1            TO DOCBUS5L
+                    MOVE 1             TO WS-ID-STATUS-ERROR
+                    MOVE DFHRED        TO MSJ5C
+               WHEN OTHER
+                    PERFORM 9000-SEND-CONTROL
+           END-EVALUATE
+
+           INITIALIZE                  WS-CAMPOS-CLIENTE
+           MOVE SPACES                 TO DOCBUS5O
+           MOVE SPACES                 TO RESP5O
+
+           PERFORM 6900-MOSTRAR-PANTALLA-REACT
+           .
+
+      *>---------------------------------------------------------------
+       6220-ACTIVAR-CLIENTE.
+           PERFORM 9000-OBTENER-FECHA-HORA
+           MOVE SPACES                 TO HV-FECHA-BAJA
+           MOVE -1                     TO WS-IND-FBAJA
+
+           MOVE 'A'                    TO HV-ESTADO
+
+           EXEC SQL
+                UPDATE BANK.CLIENTE
+                SET    FECHA_BAJA = :HV-FECHA-BAJA :WS-IND-FBAJA,
+                       ESTADO = :HV-ESTADO
+                WHERE  DOCID = :WS-COM-DOC
+           END-EXEC
+
+           IF  SQLCODE = ZEROS
+               EXEC SQL COMMIT END-EXEC
+
+               PERFORM 5900-INICIALIZAR-BAJA
+               MOVE MSJ-CLI-REACT-OK   TO MSJ5O
+           ELSE
+               EXEC SQL ROLLBACK END-EXEC
+
+               MOVE SQLCODE            TO WS-SQLCODE
+               STRING MSJ-ERR-UPD-CLI DELIMITED BY SIZE
+                      WS-SQLCODE      DELIMITED BY SIZE
+                                       INTO MSJ5O
+               MOVE DFHRED             TO MSJ5C
+               MOVE -1                 TO DOCBUS5L
+               MOVE 1                  TO WS-ID-STATUS-ERROR
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       6300-PROCESAR-CAMPOS.
+           PERFORM 6310-CAPTURAR-DATOS-PANTALLA
+
+           MOVE WS-COM-DOC-BUSQ        TO WS-COM-DOC
+           PERFORM 9000-VALIDAR-DOCUMENTO
+           IF  WS-CON-ERROR
+               MOVE WS-MENSAJE         TO MSJ5O
+               MOVE DFHRED             TO DOCBUS5C
+               MOVE -1                 TO DOCBUS5L
+           END-IF
+           MOVE SPACES                 TO WS-COM-DOC
+
+           IF  WS-SIN-ERROR
+               PERFORM 6320-BUSCAR-CLIENTE
+           ELSE
+               MOVE DFHRED             TO MSJ5C
+               PERFORM 6900-MOSTRAR-PANTALLA-REACT
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       6310-CAPTURAR-DATOS-PANTALLA.
+           IF  DOCBUS5L > 0
+           AND DOCBUS5I NOT = SPACES
+           AND DOCBUS5I NOT = LOW-VALUES
+               MOVE DOCBUS5I           TO WS-COM-DOC-BUSQ
+           ELSE
+               MOVE SPACES             TO WS-COM-DOC-BUSQ
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       6320-BUSCAR-CLIENTE.
+           EXEC SQL
+                SELECT ID_CLIENTE,
+                       DOCID,
+                       NOMBRE,
+                       TELEFONO,
+                       ESTADO,
+                       FECHA_ALTA
+                INTO   :HV-ID-CLIENTE,
+                       :HV-DOCID,
+                       :HV-NOMBRE,
+                       :HV-TELEFONO :WS-IND-TEL,
+                       :HV-ESTADO,
+                       :HV-FECHA-ALTA
+                FROM   BANK.CLIENTE
+                WHERE  DOCID = :WS-COM-DOC-BUSQ
+           END-EXEC
+
+           IF  SQLCODE = ZEROS
+               MOVE HV-ESTADO          TO WS-COM-ESTADO
+
+               IF  WS-CLI-ACTIVO
+                   PERFORM 6321-TRATAR-CLI-ATIVO
+               ELSE
+                   PERFORM 6322-TRATAR-CLI-BLOQUEADO
+               END-IF
+           ELSE
+               IF  SQLCODE = 100
+                   MOVE MSJ-CLI-NO-ENCONT TO MSJ5O
+                   MOVE DFHRED         TO MSJ5C
+                   MOVE 1              TO WS-ID-STATUS-ERROR
+                   MOVE -1             TO DOCBUS5L
+                   MOVE DFHRED         TO DOCBUS5C
+               ELSE
+                   MOVE SQLCODE        TO WS-SQLCODE
+                   STRING MSJ-ERR-SEL-CLI DELIMITED BY SIZE
+                          WS-SQLCODE      DELIMITED BY SIZE
+                                       INTO MSJ5O
+                   MOVE DFHRED         TO MSJ5C
+                   MOVE 1              TO WS-ID-STATUS-ERROR
+                   MOVE -1             TO DOCBUS5L
+                   MOVE DFHRED         TO DOCBUS5C
+               END-IF
+           END-IF
+
+           PERFORM 6900-MOSTRAR-PANTALLA-REACT
+           .
+
+      *>---------------------------------------------------------------
+       6321-TRATAR-CLI-ATIVO.
+           INITIALIZE                  WS-CAMPOS-CLIENTE
+
+           MOVE MSJ-CLI-YA-ACT         TO MSJ5O
+           MOVE DFHRED                 TO MSJ5C
+           MOVE 1                      TO WS-ID-STATUS-ERROR
+           MOVE -1                     TO DOCBUS5L
+           MOVE DFHRED                 TO DOCBUS5C
+           .
+
+      *>---------------------------------------------------------------
+       6322-TRATAR-CLI-BLOQUEADO.
+           INITIALIZE                  WS-CAMPOS-BUSQUEADA
+
+           MOVE HV-ID-CLIENTE          TO WS-COM-ID
+           MOVE HV-DOCID               TO WS-COM-DOC
+           MOVE HV-NOMBRE-TEXT         TO WS-COM-NOMBRE
+
+           IF  WS-IND-TEL NOT = -1
+               MOVE HV-TELEFONO        TO WS-COM-TEL
+           END-IF
+
+           MOVE HV-ESTADO              TO WS-COM-ESTADO
+
+           MOVE HV-FECHA-ALTA          TO WS-COM-FALTA
+           .
+
+      *>---------------------------------------------------------------
+       6900-INICIALIZAR-REACT.
+           INITIALIZE                  WS-CAMPOS-TRABAJO
+           MOVE LOW-VALUES             TO BKCLI05I
+           .
+
+      *>---------------------------------------------------------------
+       6900-MOSTRAR-PANTALLA-REACT.
+           MOVE 2                      TO WS-COM-OPCION
+           MOVE 5                      TO WS-COM-PROGRAMA
+
+           MOVE WS-COM-ID              TO ID5O
+           MOVE WS-COM-DOC             TO DOC5O
+           MOVE WS-COM-NOMBRE          TO NMB5O
+           MOVE WS-COM-TEL             TO TEL5O
+           MOVE WS-COM-ESTADO          TO EST5O
+           MOVE WS-COM-FALTA           TO FALTA5O
+
+           PERFORM 9000-OBTENER-FECHA-HORA
+           MOVE WS-FECHA               TO FCH5O
+           MOVE WS-HORA                TO HRA5O
+
+           IF  WS-SIN-ERROR
+               EXEC CICS
+                    SEND
+                    MAP('BKCLI05')
+                    MAPSET('BKMCLI')
+                    ERASE
+                    FREEKB
+               END-EXEC
+           ELSE
+               EXEC CICS
+                    SEND
+                    MAP('BKCLI05')
                     MAPSET('BKMCLI')
                     FREEKB
                     CURSOR
