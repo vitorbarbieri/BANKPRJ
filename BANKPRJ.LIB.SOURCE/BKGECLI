@@ -77,6 +77,19 @@
            VALUE 'ERROR UPDATE BANK.CLIENTE - SQLCODE '.
        77  MSJ-CLI-ACT                 PIC X(44)
            VALUE 'DATOS DEL CLIENTE ACTUALIZADOS CORRECTAMENTE'.
+       77  MSJ-CLI-YA-BLOQ             PIC X(28)
+           VALUE 'EL CLIENTE YA ESTA BLOQUEADO'.
+       77  MSJ-LOC-CLI-BLOQ            PIC X(45)
+           VALUE 'LOCALICE PRIMERO UN CLIENTE ANTES DE BLOQUEAR'.
+       77  MSJ-CLI-BLOQ-CAN            PIC X(50)
+           VALUE 'OPERACION CANCELADA. NO SE HA BLOQUEADO EL CLIENTE'.
+       77  MSJ-CLI-BLOQ-OK             PIC X(31)
+           VALUE 'CLIENTE BLOQUEADO CORRECTAMENTE'.
+       01  MSJ-CLI-BLOQ-SAL.
+           03 MSJ-CLI-BLOQ-SAL-1       PIC X(39)
+              VALUE 'NO SE PUEDE BLOQUEAR: EL CLIENTE TIENE '.
+           03 MSJ-CLI-BLOQ-SAL-1       PIC X(17)
+              VALUE 'CUENTAS CON SALDO'.
 
        01  WS-CAMPOS-TRABAJO.
            03 WS-COMMAREA.
@@ -102,6 +115,7 @@
                     88 WS-CLI-ACTIVO       VALUE 'A'.
                     88 WS-CLI-BLOQUEADO    VALUE 'B'.
                  07 WS-COM-CUENTAS     PIC X(03).
+                 07 WS-COM-SUELDO      PIC X(18).
               05 WS-CAMPOS-BUSQUEADA.
                  07 WS-COM-ID-BUSQ     PIC X(10).
                  07 WS-COM-DOC-BUSQ    PIC X(09).
@@ -148,6 +162,7 @@
            03 WS-TP-BUSQUEDA           PIC 9(01).
               88 WS-BUSQUEDA-ID            VALUE 1.
               88 WS-BUSQUEDA-DOC           VALUE 2.
+           03 WS-COM-SUELDO-NUM        PIC 9(15)V9(02).
 
        LINKAGE SECTION.
        01  DFHCOMMAREA.
@@ -162,6 +177,7 @@
            03 LK-COM-FBAJA             PIC X(10).
            03 LK-COM-ESTADO            PIC X(01).
            03 LK-COM-CUENTAS           PIC X(03).
+           03 LK-COM-SUELDO            PIC X(18).
 
       *>---------------------------------------------------------------
        PROCEDURE DIVISION.
@@ -198,7 +214,9 @@
                WHEN WS-PROG-MODIFICACION
                     PERFORM 4900-INICIALIZAR-MODIF
                     PERFORM 4000-RECIBIR-MODIF
-      *        WHEN WS-PROG-BAJA
+               WHEN WS-PROG-BAJA
+                    PERFORM 5900-INICIALIZAR-BAJA
+                    PERFORM 5000-RECIBIR-BAJA
       *        WHEN WS-PROG-REACTIVACION
            END-EVALUATE
            .
@@ -260,7 +278,8 @@
                     PERFORM 4900-INICIALIZAR-MODIF
                     PERFORM 4900-MOSTRAR-PANTALLA-MODIF
                WHEN WS-BAJA
-                    PERFORM 1900-MOSTRAR-PANTALLA-MENU
+                    PERFORM 5900-INICIALIZAR-BAJA
+                    PERFORM 5900-MOSTRAR-PANTALLA-BAJA
                WHEN WS-REACTIVACION
                     PERFORM 1900-MOSTRAR-PANTALLA-MENU
                WHEN OTHER
@@ -907,6 +926,7 @@
                MOVE DFHRED             TO DOCBUS3C
                MOVE -1                 TO DOCBUS3L
                MOVE 1                  TO WS-ID-STATUS-ERROR
+               MOVE DFHRED             TO MSJ3C
 
                PERFORM 4900-MOSTRAR-PANTALLA-MODIF
            END-IF
@@ -1203,6 +1223,278 @@
                EXEC CICS
                     SEND
                     MAP('BKCLI03')
+                    MAPSET('BKMCLI')
+                    FREEKB
+                    CURSOR
+                    ALARM
+               END-EXEC
+           END-IF
+
+           PERFORM 9000-RETURN-TRANSID
+           .
+
+      *>---------------------------------------------------------------
+      *>   SECCION 5000 - BAJA CLIENTE
+      *>---------------------------------------------------------------
+       5000-RECIBIR-BAJA.
+           MOVE DFHCOMMAREA            TO WS-COMMAREA
+
+           EXEC CICS
+                RECEIVE
+                MAP('BKCLI04')
+                MAPSET('BKMCLI')
+                RESP(WS-RESP)
+                RESP2(WS-RESP2)
+           END-EXEC
+
+           PERFORM 5100-EVALUAR-TECLA
+           .
+
+      *>---------------------------------------------------------------
+       5100-EVALUAR-TECLA.
+           MOVE EIBAID                 TO WS-EIBAID
+
+           EVALUATE TRUE
+               WHEN WS-PF3
+                    PERFORM 1900-INICIALIZAR-MENU
+                    PERFORM 1900-MOSTRAR-PANTALLA-MENU
+               WHEN WS-PF12
+                    PERFORM 5900-INICIALIZAR-BAJA
+                    PERFORM 5900-MOSTRAR-PANTALLA-BAJA
+               WHEN WS-PF5
+                    PERFORM 5200-PROCESAR-CAMPOS
+               WHEN WS-ENTER
+                    PERFORM 5300-PROCESAR-CAMPOS
+               WHEN OTHER
+                    PERFORM 9000-SEND-CONTROL
+           END-EVALUATE
+           .
+
+      *>---------------------------------------------------------------
+       5200-PROCESAR-CAMPOS.
+           IF  WS-COM-ID = SPACES
+               MOVE MSJ-LOC-CLI-BLOQ   TO MSJ4O
+               MOVE DFHRED             TO DOCBUS4C
+               MOVE -1                 TO DOCBUS4L
+               MOVE 1                  TO WS-ID-STATUS-ERROR
+               MOVE DFHRED             TO MSJ4C
+
+               PERFORM 5900-MOSTRAR-PANTALLA-BAJA
+           END-IF
+
+           EVALUATE RESP4I
+               WHEN 'S'
+                    PERFORM 5210-VALDIAR-SUELDO
+
+                    IF  WS-SIN-ERROR
+                        PERFORM 5220-ACTUALIZAR-CLIENTE
+                    END-IF
+               WHEN 'N'
+                    MOVE MSJ-CLI-BLOQ-CAN TO MSJ4O
+                    MOVE -1            TO DOCBUS4L
+                    MOVE 1             TO WS-ID-STATUS-ERROR
+                    MOVE DFHRED        TO MSJ4C
+               WHEN OTHER
+                    PERFORM 9000-SEND-CONTROL
+           END-EVALUATE
+
+           INITIALIZE                  WS-CAMPOS-CLIENTE
+           MOVE SPACES                 TO DOCBUS4O
+           MOVE SPACES                 TO RESP4O
+
+           PERFORM 5900-MOSTRAR-PANTALLA-BAJA
+           .
+
+      *>---------------------------------------------------------------
+       5210-VALDIAR-SUELDO.
+      *    REALIZAR LA BUESCA DE CUENTAS CON SUELDO
+
+           IF  WS-COM-SUELDO-NUM > ZEROS
+               INITIALIZE              WS-CAMPOS-CLIENTE
+
+               MOVE MSJ-CLI-BLOQ-SAL   TO MSJ4O
+               MOVE DFHRED             TO DOCBUS4C
+               MOVE -1                 TO DOCBUS4L
+               MOVE 1                  TO WS-ID-STATUS-ERROR
+               MOVE DFHRED             TO MSJ4C
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       5220-ACTUALIZAR-CLIENTE.
+           PERFORM 9000-OBTENER-FECHA-HORA
+           MOVE WS-FECHA               TO HV-FECHA-BAJA
+
+           MOVE 'B'                    TO HV-ESTADO
+
+           EXEC SQL
+                UPDATE BANK.CLIENTE
+                SET    FECHA_BAJA = :HV-FECHA-BAJA,
+                       ESTADO = :HV-ESTADO
+                WHERE  DOCID = :WS-COM-DOC
+           END-EXEC
+
+           IF  SQLCODE = ZEROS
+               EXEC SQL COMMIT END-EXEC
+
+               PERFORM 5900-INICIALIZAR-BAJA
+               MOVE MSJ-CLI-BLOQ-OK    TO MSJ4O
+           ELSE
+               EXEC SQL ROLLBACK END-EXEC
+
+               MOVE SQLCODE            TO WS-SQLCODE
+               STRING MSJ-ERR-UPD-CLI DELIMITED BY SIZE
+                      WS-SQLCODE      DELIMITED BY SIZE
+                                       INTO MSJ4O
+               MOVE DFHRED             TO MSJ4C
+               MOVE -1                 TO DOCBUS4L
+               MOVE 1                  TO WS-ID-STATUS-ERROR
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       5300-PROCESAR-CAMPOS.
+           PERFORM 5310-CAPTURAR-DATOS-PANTALLA
+
+           MOVE WS-COM-DOC-BUSQ        TO WS-COM-DOC
+           PERFORM 9000-VALIDAR-DOCUMENTO
+           IF  WS-CON-ERROR
+               MOVE WS-MENSAJE         TO MSJ4O
+               MOVE DFHRED             TO DOCBUS4C
+               MOVE -1                 TO DOCBUS4L
+           END-IF
+           MOVE SPACES                 TO WS-COM-DOC
+
+           IF  WS-SIN-ERROR
+               PERFORM 5320-BUSCAR-CLIENTE
+           ELSE
+               MOVE DFHRED             TO MSJ4C
+               PERFORM 5900-MOSTRAR-PANTALLA-BAJA
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       5310-CAPTURAR-DATOS-PANTALLA.
+           IF  DOCBUS4L > 0
+           AND DOCBUS4I NOT = SPACES
+           AND DOCBUS4I NOT = LOW-VALUES
+               MOVE DOCBUS4I           TO WS-COM-DOC-BUSQ
+           ELSE
+               MOVE SPACES             TO WS-COM-DOC-BUSQ
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       5320-BUSCAR-CLIENTE.
+           EXEC SQL
+                SELECT ID_CLIENTE,
+                       DOCID,
+                       NOMBRE,
+                       TELEFONO,
+                       ESTADO
+                INTO   :HV-ID-CLIENTE,
+                       :HV-DOCID,
+                       :HV-NOMBRE,
+                       :HV-TELEFONO :WS-IND-TEL,
+                       :HV-ESTADO
+                FROM   BANK.CLIENTE
+                WHERE  DOCID = :WS-COM-DOC-BUSQ
+           END-EXEC
+
+           IF  SQLCODE = ZEROS
+               MOVE HV-ESTADO          TO WS-COM-ESTADO
+
+               IF  WS-CLI-BLOQUEADO
+                   PERFORM 5321-TRATAR-CLI-BLOQUEADO
+               ELSE
+                   PERFORM 5322-TRATAR-CLI-ACTIVO
+               END-IF
+           ELSE
+               IF  SQLCODE = 100
+                   MOVE MSJ-CLI-NO-ENCONT TO MSJ4O
+                   MOVE DFHRED         TO MSJ4C
+                   MOVE 1              TO WS-ID-STATUS-ERROR
+                   MOVE -1             TO DOCBUS4L
+                   MOVE DFHRED         TO DOCBUS4C
+               ELSE
+                   MOVE SQLCODE        TO WS-SQLCODE
+                   STRING MSJ-ERR-SEL-CLI DELIMITED BY SIZE
+                          WS-SQLCODE      DELIMITED BY SIZE
+                                       INTO MSJ4O
+                   MOVE DFHRED         TO MSJ4C
+                   MOVE 1              TO WS-ID-STATUS-ERROR
+                   MOVE -1             TO DOCBUS4L
+                   MOVE DFHRED         TO DOCBUS4C
+               END-IF
+           END-IF
+
+           PERFORM 5900-MOSTRAR-PANTALLA-BAJA
+           .
+
+      *>---------------------------------------------------------------
+       5321-TRATAR-CLI-BLOQUEADO.
+           INITIALIZE                  WS-CAMPOS-CLIENTE
+
+           MOVE MSJ-CLI-YA-BLOQ        TO MSJ4O
+           MOVE DFHRED                 TO MSJ4C
+           MOVE 1                      TO WS-ID-STATUS-ERROR
+           MOVE -1                     TO DOCBUS4L
+           MOVE DFHRED                 TO DOCBUS4C
+           .
+
+      *>---------------------------------------------------------------
+       5322-TRATAR-CLI-ACTIVO.
+           INITIALIZE                  WS-CAMPOS-BUSQUEADA
+
+           MOVE HV-ID-CLIENTE          TO WS-COM-ID
+           MOVE HV-DOCID               TO WS-COM-DOC
+           MOVE HV-NOMBRE-TEXT         TO WS-COM-NOMBRE
+
+           IF  WS-IND-TEL NOT = -1
+               MOVE HV-TELEFONO        TO WS-COM-TEL
+           END-IF
+
+           MOVE HV-ESTADO              TO WS-COM-ESTADO
+
+           MOVE '0'                    TO WS-COM-CUENTAS
+           MOVE '0,00'                 TO WS-COM-SUELDO
+           .
+
+      *>---------------------------------------------------------------
+       5900-INICIALIZAR-BAJA.
+           INITIALIZE                  WS-CAMPOS-TRABAJO
+           MOVE LOW-VALUES             TO BKCLI04I
+           .
+
+      *>---------------------------------------------------------------
+       5900-MOSTRAR-PANTALLA-BAJA.
+           MOVE 2                      TO WS-COM-OPCION
+           MOVE 4                      TO WS-COM-PROGRAMA
+
+           MOVE WS-COM-ID              TO ID4O
+           MOVE WS-COM-DOC             TO DOC4O
+           MOVE WS-COM-NOMBRE          TO NMB4O
+           MOVE WS-COM-TEL             TO TEL4O
+           MOVE WS-COM-ESTADO          TO EST4O
+           MOVE WS-COM-CUENTAS         TO CTAS4O
+           MOVE WS-COM-SUELDO          TO SLD4O
+
+           PERFORM 9000-OBTENER-FECHA-HORA
+           MOVE WS-FECHA               TO FCH4O
+           MOVE WS-HORA                TO HRA4O
+
+           IF  WS-SIN-ERROR
+               EXEC CICS
+                    SEND
+                    MAP('BKCLI04')
+                    MAPSET('BKMCLI')
+                    ERASE
+                    FREEKB
+               END-EXEC
+           ELSE
+               EXEC CICS
+                    SEND
+                    MAP('BKCLI04')
                     MAPSET('BKMCLI')
                     FREEKB
                     CURSOR
