@@ -104,7 +104,7 @@
                WHEN WS-ENTER
                     PERFORM 4000-PROCESAR-OPCION
                WHEN OTHER
-                    PERFORM 9000-MOSTRAR-MENU
+                    PERFORM 9000-SEND-CONTROL
            END-EVALUATE
            .
 
@@ -203,12 +203,7 @@
                 FREEKB
            END-EXEC
 
-           EXEC CICS
-                RETURN
-                TRANSID('BANK')
-                COMMAREA(WS-COMMAREA)
-                LENGTH(LENGTH OF WS-COMMAREA)
-           END-EXEC
+           PERFORM 9000-RETURN-TRANSID
            .
 
       *>---------------------------------------------------------------
@@ -229,6 +224,26 @@
                 TIMESEP(':')
                 YYYYMMDD(WS-FECHA)
                 TIME(WS-HORA)
+           END-EXEC
+           .
+
+      *>---------------------------------------------------------------
+       9000-SEND-CONTROL.
+           EXEC CICS
+                SEND CONTROL
+                FREEKB
+            END-EXEC
+
+           PERFORM 9000-RETURN-TRANSID
+           .
+
+      *>---------------------------------------------------------------
+       9000-RETURN-TRANSID.
+           EXEC CICS
+                RETURN
+                TRANSID('BANK')
+                COMMAREA(WS-COMMAREA)
+                LENGTH(LENGTH OF WS-COMMAREA)
            END-EXEC
            .
 

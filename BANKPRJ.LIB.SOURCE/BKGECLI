@@ -64,6 +64,19 @@
            VALUE 'CLIENTE LOCALIZADO'.
        77  MSJ-CLI-NO-ENCONT           PIC X(21)
            VALUE 'CLIENTE NO ENCONTRADO'.
+       01  MSJ-CLI-BLOQ.
+           03 MSJ-CLI-BLOQ-1           PIC X(36)
+              VALUE 'CLIENTE BLOQUEADO. REACTIVELO ANTES '.
+           03 MSJ-CLI-BLOQ-2           PIC X(22)
+              VALUE 'DE MODIFICAR SUS DATOS'.
+       77  MSJ-LOC-CLI-ANTES           PIC X(44)
+           VALUE 'LOCALICE PRIMERO UN CLIENTE ANTES DE GUARDAR'.
+       77  MSJ-SIN-DATOS-MODIF         PIC X(31)
+           VALUE 'NO SE HA MODIFICADO NINGUN DATO'.
+       77  MSJ-ERR-UPD-CLI             PIC X(36)
+           VALUE 'ERROR UPDATE BANK.CLIENTE - SQLCODE '.
+       77  MSJ-CLI-ACT                 PIC X(44)
+           VALUE 'DATOS DEL CLIENTE ACTUALIZADOS CORRECTAMENTE'.
 
        01  WS-CAMPOS-TRABAJO.
            03 WS-COMMAREA.
@@ -78,15 +91,17 @@
                  88 WS-PROG-BAJA           VALUE 4.
                  88 WS-PROG-REACTIVACION   VALUE 5.
               05 WS-CAMPOS-CLIENTE.
-                 08 WS-COM-ID          PIC X(10).
-                 08 WS-COM-DOC         PIC X(09).
-                 08 WS-COM-NOMBRE      PIC X(30).
-                 08 WS-COM-EMAIL       PIC X(38).
-                 08 WS-COM-TEL         PIC X(09).
-                 08 WS-COM-FALTA       PIC X(10).
-                 08 WS-COM-FBAJA       PIC X(10).
-                 08 WS-COM-ESTADO      PIC X(01).
-                 08 WS-COM-CUENTAS     PIC X(03).
+                 07 WS-COM-ID          PIC X(10).
+                 07 WS-COM-DOC         PIC X(09).
+                 07 WS-COM-NOMBRE      PIC X(30).
+                 07 WS-COM-EMAIL       PIC X(38).
+                 07 WS-COM-TEL         PIC X(09).
+                 07 WS-COM-FALTA       PIC X(10).
+                 07 WS-COM-FBAJA       PIC X(10).
+                 07 WS-COM-ESTADO      PIC X(01).
+                    88 WS-CLI-ACTIVO       VALUE 'A'.
+                    88 WS-CLI-BLOQUEADO    VALUE 'B'.
+                 07 WS-COM-CUENTAS     PIC X(03).
               05 WS-CAMPOS-BUSQUEADA.
                  07 WS-COM-ID-BUSQ     PIC X(10).
                  07 WS-COM-DOC-BUSQ    PIC X(09).
@@ -180,7 +195,9 @@
                WHEN WS-PROG-CONSULTA
                     PERFORM 3900-INICIALIZAR-CONSULTA
                     PERFORM 3000-RECIBIR-CONSULTA
-      *        WHEN WS-PROG-MODIFICACION
+               WHEN WS-PROG-MODIFICACION
+                    PERFORM 4900-INICIALIZAR-MODIF
+                    PERFORM 4000-RECIBIR-MODIF
       *        WHEN WS-PROG-BAJA
       *        WHEN WS-PROG-REACTIVACION
            END-EVALUATE
@@ -218,7 +235,7 @@
                WHEN WS-ENTER
                     PERFORM 1200-PROCESAR-OPCION
                WHEN OTHER
-                    PERFORM 1900-MOSTRAR-PANTALLA-MENU
+                    PERFORM 9000-SEND-CONTROL
            END-EVALUATE
            .
 
@@ -240,7 +257,8 @@
                     PERFORM 3900-INICIALIZAR-CONSULTA
                     PERFORM 3900-MOSTRAR-PANTALLA-CONSULTA
                WHEN WS-MODIFICACION
-                    PERFORM 1900-MOSTRAR-PANTALLA-MENU
+                    PERFORM 4900-INICIALIZAR-MODIF
+                    PERFORM 4900-MOSTRAR-PANTALLA-MODIF
                WHEN WS-BAJA
                     PERFORM 1900-MOSTRAR-PANTALLA-MENU
                WHEN WS-REACTIVACION
@@ -275,12 +293,7 @@
                 FREEKB
            END-EXEC
 
-           EXEC CICS
-                RETURN
-                TRANSID('BKCL')
-                COMMAREA(WS-COMMAREA)
-                LENGTH(LENGTH OF WS-COMMAREA)
-           END-EXEC
+           PERFORM 9000-RETURN-TRANSID
            .
 
       *>---------------------------------------------------------------
@@ -314,7 +327,7 @@
                WHEN WS-ENTER
                     PERFORM 2200-PROCESAR-CAMPOS
                WHEN OTHER
-                    PERFORM 2900-MOSTRAR-PANTALLA-ALTA
+                    PERFORM 9000-SEND-CONTROL
            END-EVALUATE
            .
 
@@ -369,128 +382,37 @@
 
       *>---------------------------------------------------------------
        2220-VALIDAR-DATOS.
-           PERFORM 2221-VALIDAR-DOCUMENTO
-
-           IF  WS-SIN-ERROR
-               PERFORM 2222-VALIDAR-NOMBRE
-           END-IF
-
-           IF  WS-SIN-ERROR
-               PERFORM 2223-VALIDAR-EMAIL
-           END-IF
-
-           IF  WS-SIN-ERROR
-               PERFORM 2224-VALIDAR-TELEFONO
-           END-IF
-           .
-
-      *>---------------------------------------------------------------
-       2221-VALIDAR-DOCUMENTO.
-           IF  WS-COM-DOC = SPACES
-           OR  WS-COM-DOC = LOW-VALUES
-               MOVE MSJ-DOC-OBL        TO MSJ1O
+           PERFORM 9000-VALIDAR-DOCUMENTO
+           IF  WS-CON-ERROR
+               MOVE WS-MENSAJE         TO MSJ1O
                MOVE DFHRED             TO DOC1C
                MOVE -1                 TO DOC1L
-               MOVE 1                  TO WS-ID-STATUS-ERROR
            END-IF
 
            IF  WS-SIN-ERROR
-               MOVE 1                  TO WS-ID-STATUS-DOC
-
-               IF  WS-COM-DOC(1:8) IS NUMERIC
-               AND WS-COM-DOC(9:1) IS ALPHABETIC
-               AND WS-COM-DOC(9:1) NOT = SPACES
-                   MOVE ZERO           TO WS-ID-STATUS-DOC
-               ELSE
-                   IF (WS-COM-DOC(1:1) = 'X'
-                   OR  WS-COM-DOC(1:1) = 'Y'
-                   OR  WS-COM-DOC(1:1) = 'Z')
-                   AND WS-COM-DOC(2:7) IS NUMERIC
-                   AND WS-COM-DOC(9:1) IS ALPHABETIC
-                       MOVE ZERO       TO WS-ID-STATUS-DOC
-                   END-IF
-               END-IF
-
-               IF  WS-DOC-NOK
-                   MOVE MSJ-FMT-DOC-INCORR TO MSJ1O
-                   MOVE DFHRED         TO DOC1C
-                   MOVE -1             TO DOC1L
-                   MOVE 1              TO WS-ID-STATUS-ERROR
+               PERFORM 9000-VALIDAR-NOMBRE
+               IF  WS-CON-ERROR
+                   MOVE WS-MENSAJE     TO MSJ1O
+                   MOVE DFHRED         TO NMB1C
+                   MOVE -1             TO NMB1L
                END-IF
            END-IF
 
            IF  WS-SIN-ERROR
-               EXEC SQL
-                    SELECT ID_CLIENTE
-                    INTO   :HV-ID-CLIENTE
-                    FROM   BANK.CLIENTE
-                    WHERE  DOCID = :WS-COM-DOC
-               END-EXEC
-
-               IF  SQLCODE = ZEROS
-                   MOVE MSJ-CLI-YA-EXISTE TO MSJ1O
-                   MOVE DFHRED         TO DOC1C
-                   MOVE -1             TO DOC1L
-                   MOVE 1              TO WS-ID-STATUS-ERROR
-               ELSE
-                   IF  SQLCODE NOT = 100
-                       MOVE SQLCODE    TO WS-SQLCODE
-                       STRING MSJ-ERR-SEL-CLI DELIMITED BY SIZE
-                              WS-SQLCODE      DELIMITED BY SIZE
-                                       INTO MSJ2O
-                       MOVE DFHRED     TO DOC1C
-                       MOVE -1         TO DOC1L
-                       MOVE 1          TO WS-ID-STATUS-ERROR
-                   END-IF
+               PERFORM 9000-VALIDAR-EMAIL
+               IF  WS-CON-ERROR
+                   MOVE WS-MENSAJE    TO MSJ1O
+                   MOVE DFHRED        TO MAIL1C
+                   MOVE -1            TO MAIL1L
                END-IF
            END-IF
-           .
 
-      *>---------------------------------------------------------------
-       2222-VALIDAR-NOMBRE.
-           IF  WS-COM-NOMBRE = SPACES
-           OR  WS-COM-NOMBRE = LOW-VALUES
-               MOVE MSJ-NOM-OBL        TO MSJ1O
-               MOVE DFHRED             TO NMB1C
-               MOVE -1                 TO NMB1L
-               MOVE 1                  TO WS-ID-STATUS-ERROR
-           END-IF
-           .
-
-      *>---------------------------------------------------------------
-       2223-VALIDAR-EMAIL.
-           IF  WS-COM-EMAIL NOT = SPACES
-           AND WS-COM-EMAIL NOT = LOW-VALUES
-               PERFORM VARYING WS-I FROM 1 BY 1 UNTIL WS-I > 38
-                   IF WS-COM-EMAIL(WS-I:1) = '@'
-                      MOVE WS-I        TO WS-POS-ARROBA
-                   END-IF
-
-                   IF  WS-COM-EMAIL(WS-I:1) = '.'
-                       MOVE WS-I       TO WS-POS-PUNTO
-                   END-IF
-               END-PERFORM
-
-               IF  WS-POS-ARROBA = ZEROS
-               OR  (WS-POS-ARROBA NOT = ZEROS
-               AND WS-POS-ARROBA > WS-POS-PUNTO)
-                   MOVE MSJ-FMT-EMAIL-INCORR TO MSJ1O
-                   MOVE DFHRED         TO MAIL1C
-                   MOVE -1             TO MAIL1L
-                   MOVE 1              TO WS-ID-STATUS-ERROR
-               END-IF
-           END-IF
-           .
-
-      *>---------------------------------------------------------------
-       2224-VALIDAR-TELEFONO.
-           IF  WS-COM-TEL NOT = SPACES
-           AND WS-COM-TEL NOT = LOW-VALUES
-               IF  WS-COM-TEL IS NOT NUMERIC
-                   MOVE MSJ-TEL-NO-NUM TO MSJ1O
+           IF  WS-SIN-ERROR
+               PERFORM 9000-VALIDAR-TELEFONO
+               IF  WS-CON-ERROR
+                   MOVE WS-MENSAJE     TO MSJ1O
                    MOVE DFHRED         TO TEL1C
                    MOVE -1             TO TEL1L
-                   MOVE 1              TO WS-ID-STATUS-ERROR
                END-IF
            END-IF
            .
@@ -517,7 +439,7 @@
                    MOVE SQLCODE        TO WS-SQLCODE
                    STRING MSJ-ERR-UPD-CTRL-ID DELIMITED BY SIZE
                           WS-SQLCODE          DELIMITED BY SIZE
-                                       INTO MSJ2O
+                                       INTO MSJ1O
                END-IF
            ELSE
                IF  SQLCODE = 100
@@ -535,13 +457,13 @@
                        MOVE SQLCODE        TO WS-SQLCODE
                        STRING MSJ-ERR-INS-CTRL-ID DELIMITED BY SIZE
                               WS-SQLCODE          DELIMITED BY SIZE
-                                           INTO MSJ2O
+                                           INTO MSJ1O
                    END-IF
                ELSE
                    MOVE SQLCODE        TO WS-SQLCODE
                    STRING MSJ-ERR-SEL-CTRL-ID DELIMITED BY SIZE
                           WS-SQLCODE          DELIMITED BY SIZE
-                                       INTO MSJ2O
+                                       INTO MSJ1O
                END-IF
            END-IF
 
@@ -665,12 +587,7 @@
                END-EXEC
            END-IF
 
-           EXEC CICS
-                RETURN
-                TRANSID('BKCL')
-                COMMAREA(WS-COMMAREA)
-                LENGTH(LENGTH OF WS-COMMAREA)
-           END-EXEC
+           PERFORM 9000-RETURN-TRANSID
            .
 
       *>---------------------------------------------------------------
@@ -704,7 +621,7 @@
                WHEN WS-ENTER
                     PERFORM 3200-PROCESAR-CAMPOS
                WHEN OTHER
-                    PERFORM 3900-MOSTRAR-PANTALLA-CONSULTA
+                    PERFORM 9000-SEND-CONTROL
            END-EVALUATE
            .
 
@@ -777,36 +694,16 @@
            END-IF
 
            IF  WS-SIN-ERROR
-               PERFORM 3221-VALIDAR-DOCUMENTO
-           END-IF
-           .
-
-      *>---------------------------------------------------------------
-       3221-VALIDAR-DOCUMENTO.
-           IF  WS-COM-DOC-BUSQ NOT = SPACES
+           AND WS-COM-DOC-BUSQ NOT = SPACES
            AND WS-COM-DOC-BUSQ NOT = LOW-VALUES
-               MOVE 1                  TO WS-ID-STATUS-DOC
-
-               IF  WS-COM-DOC-BUSQ(1:8) IS NUMERIC
-               AND WS-COM-DOC-BUSQ(9:1) IS ALPHABETIC
-               AND WS-COM-DOC-BUSQ(9:1) NOT = SPACES
-                   MOVE ZERO           TO WS-ID-STATUS-DOC
-               ELSE
-                   IF (WS-COM-DOC-BUSQ(1:1) = 'X'
-                   OR  WS-COM-DOC-BUSQ(1:1) = 'Y'
-                   OR  WS-COM-DOC-BUSQ(1:1) = 'Z')
-                   AND WS-COM-DOC-BUSQ(2:7) IS NUMERIC
-                   AND WS-COM-DOC-BUSQ(9:1) IS ALPHABETIC
-                       MOVE ZERO       TO WS-ID-STATUS-DOC
-                   END-IF
-               END-IF
-
-               IF  WS-DOC-NOK
-                   MOVE MSJ-FMT-DOC-INCORR TO MSJ2O
+               MOVE WS-COM-DOC-BUSQ    TO WS-COM-DOC
+               PERFORM 9000-VALIDAR-DOCUMENTO
+               IF  WS-CON-ERROR
+                   MOVE WS-MENSAJE     TO MSJ2O
                    MOVE DFHRED         TO DOCBUS2C
                    MOVE -1             TO DOCBUS2L
-                   MOVE 1              TO WS-ID-STATUS-ERROR
                END-IF
+               MOVE SPACES             TO WS-COM-DOC
            END-IF
            .
 
@@ -884,8 +781,6 @@
                MOVE HV-FECHA-ALTA      TO WS-COM-FALTA
                MOVE HV-ESTADO          TO WS-COM-ESTADO
                MOVE '0'                TO WS-COM-CUENTAS
-
-               PERFORM 3900-MOSTRAR-PANTALLA-CONSULTA
            ELSE
                IF  SQLCODE = 100
                    MOVE MSJ-CLI-NO-ENCONT TO MSJ2O
@@ -899,8 +794,6 @@
                        MOVE -1         TO DOCBUS2L
                        MOVE DFHRED     TO DOCBUS2C
                    END-IF
-
-                   PERFORM 3900-MOSTRAR-PANTALLA-CONSULTA
                ELSE
                    MOVE SQLCODE        TO WS-SQLCODE
                    STRING MSJ-ERR-SEL-CLI DELIMITED BY SIZE
@@ -916,17 +809,16 @@
                        MOVE -1         TO DOCBUS2L
                        MOVE DFHRED     TO DOCBUS2C
                    END-IF
-
-                   PERFORM 3900-MOSTRAR-PANTALLA-CONSULTA
                END-IF
            END-IF
+
+           PERFORM 3900-MOSTRAR-PANTALLA-CONSULTA
            .
 
       *>---------------------------------------------------------------
        3900-INICIALIZAR-CONSULTA.
            INITIALIZE                  WS-CAMPOS-TRABAJO
            MOVE LOW-VALUES             TO BKCLI02I
-           MOVE ZERO                   TO WS-ID-STATUS-ERROR
            .
 
       *>---------------------------------------------------------------
@@ -968,13 +860,357 @@
                END-EXEC
            END-IF
 
+           PERFORM 9000-RETURN-TRANSID
+           .
+
+      *>---------------------------------------------------------------
+      *>   SECCION 4000 - MODIFICACION CLIENTE
+      *>---------------------------------------------------------------
+       4000-RECIBIR-MODIF.
+           MOVE DFHCOMMAREA            TO WS-COMMAREA
 
            EXEC CICS
-                RETURN
-                TRANSID('BKCL')
-                COMMAREA(WS-COMMAREA)
-                LENGTH(LENGTH OF WS-COMMAREA)
+                RECEIVE
+                MAP('BKCLI03')
+                MAPSET('BKMCLI')
+                RESP(WS-RESP)
+                RESP2(WS-RESP2)
            END-EXEC
+
+           PERFORM 4100-EVALUAR-TECLA
+           .
+
+      *>---------------------------------------------------------------
+       4100-EVALUAR-TECLA.
+           MOVE EIBAID                 TO WS-EIBAID
+
+           EVALUATE TRUE
+               WHEN WS-PF3
+                    PERFORM 1900-INICIALIZAR-MENU
+                    PERFORM 1900-MOSTRAR-PANTALLA-MENU
+               WHEN WS-PF12
+                    PERFORM 4900-INICIALIZAR-MODIF
+                    PERFORM 4900-MOSTRAR-PANTALLA-MODIF
+               WHEN WS-PF5
+                    PERFORM 4200-PROCESAR-CAMPOS
+               WHEN WS-ENTER
+                    PERFORM 4300-PROCESAR-CAMPOS
+               WHEN OTHER
+                    PERFORM 9000-SEND-CONTROL
+           END-EVALUATE
+           .
+
+      *>---------------------------------------------------------------
+       4200-PROCESAR-CAMPOS.
+           IF  WS-COM-ID = SPACES
+               MOVE MSJ-LOC-CLI-ANTES  TO MSJ3O
+               MOVE DFHRED             TO DOCBUS3C
+               MOVE -1                 TO DOCBUS3L
+               MOVE 1                  TO WS-ID-STATUS-ERROR
+
+               PERFORM 4900-MOSTRAR-PANTALLA-MODIF
+           END-IF
+           MOVE DOCBUS3I               TO WS-COM-DOC
+
+           PERFORM 4210-VALIDAR-DIFF
+
+           IF  WS-SIN-ERROR
+               PERFORM 4220-CAPTURAR-DATOS-PANTALLA
+
+               PERFORM 4230-VALIDAR-DATOS
+           END-IF
+
+           IF  WS-SIN-ERROR
+               PERFORM 4240-ACTUALIZAR-CLIENTE
+           ELSE
+               MOVE DFHRED             TO MSJ3C
+               PERFORM 4900-MOSTRAR-PANTALLA-MODIF
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       4210-VALIDAR-DIFF.
+           IF  NMB3I = WS-COM-NOMBRE
+           AND MAIL3I = WS-COM-EMAIL
+           AND TEL3I = WS-COM-TEL
+               MOVE MSJ-SIN-DATOS-MODIF TO MSJ3O
+               MOVE DFHRED             TO NMB3C
+               MOVE DFHRED             TO MAIL3C
+               MOVE DFHRED             TO TEL3C
+               MOVE -1                 TO NMB3L
+               MOVE 1                  TO WS-ID-STATUS-ERROR
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       4220-CAPTURAR-DATOS-PANTALLA.
+           IF  NMB3L > 0
+           AND NMB3I NOT = SPACES
+           AND NMB3I NOT = LOW-VALUES
+               MOVE NMB3I              TO WS-COM-NOMBRE
+           ELSE
+               MOVE SPACES             TO WS-COM-NOMBRE
+           END-IF
+
+           IF  MAIL3L > 0
+           AND MAIL3I NOT = SPACES
+           AND MAIL3I NOT = LOW-VALUES
+               MOVE MAIL3I             TO WS-COM-EMAIL
+           ELSE
+               MOVE SPACES             TO WS-COM-EMAIL
+           END-IF
+
+           IF  TEL3L > 0
+           AND TEL3I NOT = SPACES
+           AND TEL3I NOT = LOW-VALUES
+               MOVE TEL3I              TO WS-COM-TEL
+           ELSE
+               MOVE SPACES             TO WS-COM-TEL
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       4230-VALIDAR-DATOS.
+           PERFORM 9000-VALIDAR-NOMBRE
+           IF  WS-CON-ERROR
+               MOVE WS-MENSAJE         TO MSJ3O
+               MOVE DFHRED             TO NMB3C
+               MOVE -1                 TO NMB3L
+           END-IF
+
+           IF  WS-SIN-ERROR
+               PERFORM 9000-VALIDAR-EMAIL
+               IF  WS-CON-ERROR
+                   MOVE WS-MENSAJE     TO MSJ3O
+                   MOVE DFHRED         TO MAIL3C
+                   MOVE -1             TO MAIL3L
+               END-IF
+           END-IF
+
+           IF  WS-SIN-ERROR
+               PERFORM 9000-VALIDAR-TELEFONO
+               IF  WS-CON-ERROR
+                   MOVE WS-MENSAJE     TO MSJ3O
+                   MOVE DFHRED         TO TEL3C
+                   MOVE -1             TO TEL3L
+               END-IF
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       4240-ACTUALIZAR-CLIENTE.
+           MOVE LENGTH OF WS-COM-NOMBRE TO HV-NOMBRE-LEN
+           MOVE WS-COM-NOMBRE          TO HV-NOMBRE-TEXT
+
+           IF  WS-COM-EMAIL NOT = SPACES
+               MOVE LENGTH OF WS-COM-EMAIL TO HV-EMAIL-LEN
+               MOVE WS-COM-EMAIL       TO HV-EMAIL-TEXT
+           ELSE
+               MOVE -1                 TO WS-IND-EMAIL
+           END-IF
+
+           IF  WS-COM-TEL NOT = SPACES
+               MOVE WS-COM-TEL         TO HV-TELEFONO
+           ELSE
+               MOVE -1                 TO WS-IND-TEL
+           END-IF
+
+           EXEC SQL
+                UPDATE BANK.CLIENTE
+                SET    NOMBRE = :HV-NOMBRE,
+                       EMAIL = :HV-EMAIL,
+                       TELEFONO = :HV-TELEFONO
+                WHERE  DOCID = :WS-COM-DOC
+           END-EXEC
+
+           IF  SQLCODE = ZEROS
+               EXEC SQL COMMIT END-EXEC
+
+               PERFORM 4900-INICIALIZAR-MODIF
+               MOVE MSJ-CLI-ACT        TO MSJ3O
+           ELSE
+               EXEC SQL ROLLBACK END-EXEC
+
+               MOVE SQLCODE            TO WS-SQLCODE
+               STRING MSJ-ERR-UPD-CLI DELIMITED BY SIZE
+                      WS-SQLCODE      DELIMITED BY SIZE
+                                       INTO MSJ3O
+               MOVE DFHRED             TO MSJ3C
+               MOVE -1                 TO DOCBUS3L
+               MOVE 1                  TO WS-ID-STATUS-ERROR
+           END-IF
+
+           PERFORM 4900-MOSTRAR-PANTALLA-MODIF
+           .
+
+      *>---------------------------------------------------------------
+       4300-PROCESAR-CAMPOS.
+           PERFORM 4310-VALIDAR-CLI-YA-CONSULTADO
+
+           PERFORM 4320-CAPTURAR-DATOS-PANTALLA
+
+           MOVE DOCBUS3I               TO WS-COM-DOC
+           PERFORM 9000-VALIDAR-DOCUMENTO
+           IF  WS-CON-ERROR
+               MOVE WS-MENSAJE         TO MSJ3O
+               MOVE DFHRED             TO DOCBUS3C
+               MOVE -1                 TO DOCBUS3L
+           END-IF
+           MOVE SPACES                 TO WS-COM-DOC
+
+           IF  WS-SIN-ERROR
+               PERFORM 4330-BUSCAR-CLIENTE
+           ELSE
+               MOVE DFHRED             TO MSJ3C
+               PERFORM 4900-MOSTRAR-PANTALLA-MODIF
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       4310-VALIDAR-CLI-YA-CONSULTADO.
+           IF  WS-COM-ID NOT = SPACES
+               PERFORM 9000-SEND-CONTROL
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       4320-CAPTURAR-DATOS-PANTALLA.
+           IF  DOCBUS3L > 0
+           AND DOCBUS3I NOT = SPACES
+           AND DOCBUS3I NOT = LOW-VALUES
+               MOVE DOCBUS3I           TO WS-COM-DOC-BUSQ
+           ELSE
+               MOVE SPACES             TO WS-COM-DOC-BUSQ
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       4330-BUSCAR-CLIENTE.
+           INITIALIZE                  WS-CAMPOS-CLIENTE
+
+           EXEC SQL
+                SELECT ID_CLIENTE,
+                       DOCID,
+                       NOMBRE,
+                       EMAIL,
+                       TELEFONO,
+                       FECHA_ALTA,
+                       ESTADO
+                INTO   :HV-ID-CLIENTE,
+                       :HV-DOCID,
+                       :HV-NOMBRE,
+                       :HV-EMAIL :WS-IND-EMAIL,
+                       :HV-TELEFONO :WS-IND-TEL,
+                       :HV-FECHA-ALTA,
+                       :HV-ESTADO
+                FROM   BANK.CLIENTE
+                WHERE  DOCID = :WS-COM-DOC-BUSQ
+           END-EXEC
+
+           IF  SQLCODE = ZEROS
+               MOVE HV-ESTADO          TO WS-COM-ESTADO
+
+               IF  WS-CLI-BLOQUEADO
+                   PERFORM 4331-TRATAR-CLI-BLOQUEADO
+               ELSE
+                   PERFORM 4332-TRATAR-CLI-ACTIVO
+               END-IF
+           ELSE
+               IF  SQLCODE = 100
+                   MOVE MSJ-CLI-NO-ENCONT TO MSJ3O
+                   MOVE DFHRED         TO MSJ3C
+                   MOVE 1              TO WS-ID-STATUS-ERROR
+                   MOVE -1             TO DOCBUS3L
+                   MOVE DFHRED         TO DOCBUS3C
+               ELSE
+                   MOVE SQLCODE        TO WS-SQLCODE
+                   STRING MSJ-ERR-SEL-CLI DELIMITED BY SIZE
+                          WS-SQLCODE      DELIMITED BY SIZE
+                                       INTO MSJ3O
+                   MOVE DFHRED         TO MSJ3C
+                   MOVE 1              TO WS-ID-STATUS-ERROR
+                   MOVE -1             TO DOCBUS3L
+                   MOVE DFHRED         TO DOCBUS3C
+               END-IF
+           END-IF
+
+           PERFORM 4900-MOSTRAR-PANTALLA-MODIF
+           .
+
+      *>---------------------------------------------------------------
+       4331-TRATAR-CLI-BLOQUEADO.
+           INITIALIZE                  WS-CAMPOS-CLIENTE
+
+           MOVE MSJ-CLI-BLOQ           TO MSJ3O
+           MOVE DFHRED                 TO MSJ3C
+           MOVE 1                      TO WS-ID-STATUS-ERROR
+           MOVE -1                     TO DOCBUS3L
+           MOVE DFHRED                 TO DOCBUS3C
+           .
+
+      *>---------------------------------------------------------------
+       4332-TRATAR-CLI-ACTIVO.
+           INITIALIZE                  WS-CAMPOS-BUSQUEADA
+           MOVE MSJ-CLI-LOC            TO MSJ3O
+
+           MOVE HV-ID-CLIENTE          TO WS-COM-ID
+           MOVE HV-DOCID               TO WS-COM-DOC
+           MOVE HV-NOMBRE-TEXT         TO WS-COM-NOMBRE
+
+           IF  WS-IND-EMAIL NOT = -1
+               MOVE HV-EMAIL-TEXT      TO WS-COM-EMAIL
+           END-IF
+
+           IF  WS-IND-TEL NOT = -1
+               MOVE HV-TELEFONO        TO WS-COM-TEL
+           END-IF
+
+           MOVE HV-FECHA-ALTA          TO WS-COM-FALTA
+           .
+
+      *>---------------------------------------------------------------
+       4900-INICIALIZAR-MODIF.
+           INITIALIZE                  WS-CAMPOS-TRABAJO
+           MOVE LOW-VALUES             TO BKCLI03I
+           .
+
+      *>---------------------------------------------------------------
+       4900-MOSTRAR-PANTALLA-MODIF.
+           MOVE 2                      TO WS-COM-OPCION
+           MOVE 3                      TO WS-COM-PROGRAMA
+
+           MOVE WS-COM-ID              TO ID3O
+           MOVE WS-COM-DOC             TO DOC3O
+           MOVE WS-COM-NOMBRE          TO NMB3O
+           MOVE WS-COM-EMAIL           TO MAIL3O
+           MOVE WS-COM-TEL             TO TEL3O
+           MOVE WS-COM-FALTA           TO FALTA3O
+           MOVE WS-COM-ESTADO          TO EST3O
+
+           PERFORM 9000-OBTENER-FECHA-HORA
+           MOVE WS-FECHA               TO FCH3O
+           MOVE WS-HORA                TO HRA3O
+
+           IF  WS-SIN-ERROR
+               EXEC CICS
+                    SEND
+                    MAP('BKCLI03')
+                    MAPSET('BKMCLI')
+                    ERASE
+                    FREEKB
+               END-EXEC
+           ELSE
+               EXEC CICS
+                    SEND
+                    MAP('BKCLI03')
+                    MAPSET('BKMCLI')
+                    FREEKB
+                    CURSOR
+                    ALARM
+               END-EXEC
+           END-IF
+
+           PERFORM 9000-RETURN-TRANSID
            .
 
       *>---------------------------------------------------------------
@@ -994,6 +1230,125 @@
                 YYYYMMDD(WS-FECHA)
                 TIME(WS-HORA)
            END-EXEC
+           .
+
+      *>---------------------------------------------------------------
+       9000-SEND-CONTROL.
+           EXEC CICS
+                SEND CONTROL
+                FREEKB
+           END-EXEC
+
+           PERFORM 9000-RETURN-TRANSID
+           .
+
+      *>---------------------------------------------------------------
+       9000-RETURN-TRANSID.
+           EXEC CICS
+                RETURN
+                TRANSID('BKCL')
+                COMMAREA(WS-COMMAREA)
+                LENGTH(LENGTH OF WS-COMMAREA)
+           END-EXEC
+           .
+
+      *>---------------------------------------------------------------
+       9000-VALIDAR-DOCUMENTO.
+           IF  (WS-COM-DOC = SPACES
+           OR   WS-COM-DOC = LOW-VALUES)
+           AND NOT WS-PROG-CONSULTA
+               MOVE MSJ-DOC-OBL        TO WS-MENSAJE
+               MOVE 1                  TO WS-ID-STATUS-ERROR
+           END-IF
+
+           IF  WS-SIN-ERROR
+               MOVE 1                  TO WS-ID-STATUS-DOC
+
+               IF  WS-COM-DOC(1:8) IS NUMERIC
+               AND WS-COM-DOC(9:1) IS ALPHABETIC
+               AND WS-COM-DOC(9:1) NOT = SPACES
+                   MOVE ZERO           TO WS-ID-STATUS-DOC
+               ELSE
+                   IF (WS-COM-DOC(1:1) = 'X'
+                   OR  WS-COM-DOC(1:1) = 'Y'
+                   OR  WS-COM-DOC(1:1) = 'Z')
+                   AND WS-COM-DOC(2:7) IS NUMERIC
+                   AND WS-COM-DOC(9:1) IS ALPHABETIC
+                       MOVE ZERO       TO WS-ID-STATUS-DOC
+                   END-IF
+               END-IF
+
+               IF  WS-DOC-NOK
+                   MOVE MSJ-FMT-DOC-INCORR TO WS-MENSAJE
+                   MOVE 1              TO WS-ID-STATUS-ERROR
+               END-IF
+           END-IF
+
+           IF  WS-SIN-ERROR
+           AND WS-PROG-ALTA
+               EXEC SQL
+                    SELECT ID_CLIENTE
+                    INTO   :HV-ID-CLIENTE
+                    FROM   BANK.CLIENTE
+                    WHERE  DOCID = :WS-COM-DOC
+               END-EXEC
+
+               IF  SQLCODE = ZEROS
+                   MOVE MSJ-CLI-YA-EXISTE TO WS-MENSAJE
+                   MOVE 1              TO WS-ID-STATUS-ERROR
+               ELSE
+                   IF  SQLCODE NOT = 100
+                       MOVE SQLCODE    TO WS-SQLCODE
+                       STRING MSJ-ERR-SEL-CLI DELIMITED BY SIZE
+                              WS-SQLCODE      DELIMITED BY SIZE
+                                       INTO WS-MENSAJE
+                       MOVE 1          TO WS-ID-STATUS-ERROR
+                   END-IF
+               END-IF
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       9000-VALIDAR-NOMBRE.
+           IF  WS-COM-NOMBRE = SPACES
+           OR  WS-COM-NOMBRE = LOW-VALUES
+               MOVE MSJ-NOM-OBL        TO WS-MENSAJE
+               MOVE 1                  TO WS-ID-STATUS-ERROR
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       9000-VALIDAR-EMAIL.
+           IF  WS-COM-EMAIL NOT = SPACES
+           AND WS-COM-EMAIL NOT = LOW-VALUES
+               PERFORM VARYING WS-I FROM 1 BY 1 UNTIL WS-I > 38
+                   IF WS-COM-EMAIL(WS-I:1) = '@'
+                      MOVE WS-I        TO WS-POS-ARROBA
+                   END-IF
+
+                   IF  WS-COM-EMAIL(WS-I:1) = '.'
+                       MOVE WS-I       TO WS-POS-PUNTO
+                   END-IF
+               END-PERFORM
+
+               IF  WS-POS-ARROBA = ZEROS
+               OR  (WS-POS-ARROBA NOT = ZEROS
+               AND WS-POS-ARROBA > WS-POS-PUNTO)
+                   MOVE MSJ-FMT-EMAIL-INCORR TO WS-MENSAJE
+                   MOVE 1              TO WS-ID-STATUS-ERROR
+               END-IF
+           END-IF
+           .
+
+      *>---------------------------------------------------------------
+       9000-VALIDAR-TELEFONO.
+           IF  WS-COM-TEL NOT = SPACES
+           AND WS-COM-TEL NOT = LOW-VALUES
+               IF  WS-COM-TEL IS NOT NUMERIC
+                   MOVE MSJ-TEL-NO-NUM TO WS-MENSAJE
+                   MOVE 1              TO WS-ID-STATUS-ERROR
+               END-IF
+           END-IF
            .
 
       *>---------------------------------------------------------------
